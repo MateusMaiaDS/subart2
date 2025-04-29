@@ -6,6 +6,8 @@
 // Creating the struct
 struct Node;
 struct modelParam;
+struct modelParam_uni;
+
 
 struct modelParam {
 
@@ -16,8 +18,11 @@ struct modelParam {
 
   unsigned int n;
   unsigned int n_test;
-
   unsigned int d;
+
+  arma::uvec init_train_index;
+  arma::uvec init_test_index;
+
   // BART prior param specification
   int n_tree;
   int d_var; // Dimension of variables in my base
@@ -78,6 +83,79 @@ struct modelParam {
 };
 
 
+struct modelParam_uni {
+
+  arma::mat x_train;
+  arma::mat y_mat;
+  arma::mat x_test;
+  arma::mat xcut;
+
+  unsigned int n;
+  unsigned int n_test;
+
+  arma::uvec init_train_index;
+  arma::uvec init_test_index;
+
+  unsigned int d;
+  // BART prior param specification
+  int n_tree;
+  int d_var; // Dimension of variables in my base
+  double alpha;
+  double beta;
+  arma::vec sigma_mu;
+  arma::mat Sigma;
+  arma::mat S_0_wish;
+  arma::vec a_j_vec;
+  arma::vec A_j_vec;
+  arma::mat W;
+  arma::mat R;
+  arma::mat D;
+
+  // Specific variables for each tree
+  bool sv_bool;
+  arma::mat sv_matrix;
+
+  double nu;
+  int node_min_size;
+
+  // MCMC spec.
+  int n_mcmc;
+  int n_burn;
+
+  // Create an indicator of accepted grown trees
+  arma::vec move_proposal;
+  arma::vec move_acceptance;
+
+  // Creating new objects for new rules for categorical indicators
+  arma::uvec categorical_indicators;
+  bool categorical_indicators_bool;
+
+  // Elements to be used in the loglikelihood update and mu update
+  double v_j;
+  double sigma_mu_j;
+
+  // Defining the constructor for the model param
+  modelParam_uni(arma::mat x_train_,
+                 arma::vec y_mat_,
+                 arma::mat x_test_,
+                 arma::mat x_cut_,
+                 int n_tree_,
+                 int node_min_size_,
+                 double alpha_,
+                 double beta_,
+                 double nu_,
+                 arma::vec sigma_mu_,
+                 arma::mat Sigma_,
+                 arma::mat S_0_wish_,
+                 arma::vec A_j_vec_,
+                 double n_mcmc_,
+                 double n_burn_,
+                 bool sv_bool_,
+                 arma::mat sv_matrix_,
+                 arma::uvec categorical_indicators_);
+
+};
+
 // Creating the node struct
 struct Node {
 
@@ -88,6 +166,7 @@ struct Node {
   Node* parent;
   arma::uvec train_index;
   arma::uvec test_index;
+
 
   // Branch parameters
   int var_split;
@@ -130,7 +209,7 @@ struct Node {
   void updateResiduals_uni(modelParam& data, arma::vec &curr_res);
   void displayCurrNode();
 
-  Node(modelParam &data);
+  Node();
   ~Node();
 };
 
