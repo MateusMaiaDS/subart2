@@ -49,8 +49,8 @@ struct modelParam {
   unsigned int n_burn;
 
   // Create an indicator of accepted grown trees
-  arma::vec move_proposal;
-  arma::vec move_acceptance;
+  arma::uvec::fixed<3> move_proposal;
+  arma::uvec::fixed<3> move_acceptance;
 
   // Creating new objects for new rules for categorical indicators
   arma::uvec categorical_indicators;

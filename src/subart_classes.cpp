@@ -58,8 +58,8 @@ modelParam::modelParam(arma::mat x_train_,
   x_test = x_test_;
   xcut = x_cut_;
 
-  n = x_train_.n_elem; // Converting uword to unsigned int; see if isn't a problme in the future
-  n_test = x_train_.n_elem; // Converting uword to unsigned int; see if isn't a problme in the future
+  n = x_train_.n_rows; // Converting uword to unsigned int; see if isn't a problme in the future
+  n_test = x_train_.n_rows; // Converting uword to unsigned int; see if isn't a problme in the future
   d = y_mat.n_cols;
 
   init_train_index = arma::uvec(n);
@@ -93,12 +93,15 @@ modelParam::modelParam(arma::mat x_train_,
   // Generating the elements for the correlation matrix
   R = Sigma_;
   D = arma::mat(d,d); // There is more efficient way to declare the diagonal matrix without using arma::eye?
+
   for(arma::uword i = 0; i<d;i++){
     D.at(i,i) = 1.0;
   }
   // Grow acceptation ratio
-  move_proposal = arma::vec(3);
-  move_acceptance = arma::vec(3);
+  for(unsigned int i = 0; i<3;i++){
+    move_proposal[i] = 0;
+    move_acceptance[i] = 0;
+  }
 
   categorical_indicators = categorical_indicators_;
 

@@ -106,12 +106,13 @@ void cppsubart(arma::mat x_train,
       // Initializing the Sigma auxiliary objects
       arma::mat Sigma_j_mj(1,(data.d-1),arma::fill::none); // 2d--change -- TODO: change this to a vector and make things simpler later.
       arma::mat Sigma_mj_j((data.d-1),1,arma::fill::none); // 2d--change -- TODO: change this to a vector and make things simpler later.
-      arma::mat Sigma_mj_mj = data.Sigma; // 2d--change
+      arma::mat Sigma_mj_mj((data.d-1),(data.d-1),arma::fill::none); // 2d--change
       arma::mat Sigma_mj_mj_inv((data.d-1),(data.d-1),arma::fill::none);
 
       // Declaring Sigmas and auxiliarys int/doubles
       double Sigma_j_j;
       unsigned int aux_j_counter = 0;
+      unsigned int extra_aux_j_counter = 0;
 
 
       for(unsigned int i = 0; i < data.n_mcmc; i ++){
@@ -125,15 +126,28 @@ void cppsubart(arma::mat x_train,
             Sigma_j_j = data.Sigma.at(j,j);
             aux_j_counter = 0;
 
-            for(unsigned int d = 0; d < data.d; d++){
+            for(unsigned int id_col = 0; id_col < data.d; id_col++){
 
-              if(d!=j){
-                Sigma_j_mj.at(0,aux_j_counter) = data.Sigma.at(j,d);
-                Sigma_mj_j.at(aux_j_counter,0) = data.Sigma.at(j,d);
-                y_mj.col(aux_j_counter) = data.y_mat.col(aux_j_counter);
-                y_hat_mj.col(aux_j_counter) = data.y_mat.col(aux_j_counter);
-                aux_j_counter++;
+              if(id_col!=j){
+                Sigma_j_mj.at(0,aux_j_counter) = data.Sigma.at(j,id_col);
+                Sigma_mj_j.at(aux_j_counter,0) = data.Sigma.at(j,id_col);
+                y_mj.unsafe_col(aux_j_counter) = data.y_mat.unsafe_col(id_col);
+                y_hat_mj.unsafe_col(aux_j_counter) = data.y_mat.unsafe_col(id_col);
+                extra_aux_j_counter = 0;
+
+                for(unsigned int extra_id_col = 0; extra_id_col < data.d; extra_id_col++){
+
+                  if(extra_id_col!=j){
+                    Sigma_mj_mj.at(aux_j_counter,extra_aux_j_counter) = data.Sigma.at(id_col,extra_id_col);
+                    extra_aux_j_counter++;
+                  }
+
+                }
+
+              aux_j_counter++;
+
               }
+
             }
 
 
@@ -148,7 +162,13 @@ void cppsubart(arma::mat x_train,
                 partial_u.at(id_train) = arma::as_scalar(Sigma_calculation_aux*(y_mj.row(id_train)-y_hat_mj.row(id_train)).t());
             }
 
+            double v = Sigma_j_j - arma::as_scalar(Sigma_j_mj*Sigma_mj_mj_inv*Sigma_mj_j);
+            data.v_j = v;
 
+            data.sigma_mu_j = data.sigma_mu.at(j);
+
+
+            // Updating the tree
         }
       }
 
