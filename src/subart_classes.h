@@ -42,11 +42,11 @@ struct modelParam {
   arma::mat sv_matrix;
 
   double nu;
-  int node_min_size;
+  unsigned int node_min_size;
 
   // MCMC spec.
-  int n_mcmc;
-  int n_burn;
+  unsigned int n_mcmc;
+  unsigned int n_burn;
 
   // Create an indicator of accepted grown trees
   arma::vec move_proposal;
@@ -65,8 +65,8 @@ struct modelParam {
              arma::mat y_mat_,
              arma::mat x_test_,
              arma::mat x_cut_,
-             int n_tree_,
-             int node_min_size_,
+             unsigned int n_tree_,
+             unsigned int node_min_size_,
              double alpha_,
              double beta_,
              double nu_,
@@ -98,8 +98,8 @@ struct modelParam_uni {
 
   unsigned int d;
   // BART prior param specification
-  int n_tree;
-  int d_var; // Dimension of variables in my base
+  unsigned int n_tree;
+  unsigned int d_var; // Dimension of variables in my base
   double alpha;
   double beta;
   arma::vec sigma_mu;
@@ -119,8 +119,8 @@ struct modelParam_uni {
   int node_min_size;
 
   // MCMC spec.
-  int n_mcmc;
-  int n_burn;
+  unsigned int n_mcmc;
+  unsigned int n_burn;
 
   // Create an indicator of accepted grown trees
   arma::vec move_proposal;
@@ -139,8 +139,8 @@ struct modelParam_uni {
                  arma::vec y_mat_,
                  arma::mat x_test_,
                  arma::mat x_cut_,
-                 int n_tree_,
-                 int node_min_size_,
+                 unsigned int n_tree_,
+                 unsigned int node_min_size_,
                  double alpha_,
                  double beta_,
                  double nu_,
@@ -169,12 +169,12 @@ struct Node {
 
 
   // Branch parameters
-  int var_split;
+  unsigned int var_split;
   double var_split_rule;
   double lower;
   double upper;
   double curr_weight; // indicates if the observation is within terminal node or not
-  int depth = 0;
+  unsigned int depth = 0;
 
 
   // Leaf parameters
@@ -189,8 +189,8 @@ struct Node {
   double S_j;
 
 
-  int n_leaf = 0;
-  int n_leaf_test = 0;
+  unsigned int n_leaf = 0;
+  unsigned int n_leaf_test = 0;
 
   // Creating the methods
   void addingLeaves(modelParam& data);

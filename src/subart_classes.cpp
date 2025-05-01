@@ -12,7 +12,7 @@ Node::Node(){
   lower = 0.0;
   upper = 1.0;
   mu = 0.0;
-  n_leaf = 0.0;
+  n_leaf = 0;
   n_leaf_test = 0;
   log_likelihood = 0.0;
   depth = 0;
@@ -36,8 +36,8 @@ modelParam::modelParam(arma::mat x_train_,
                        arma::mat y_mat_,
                        arma::mat x_test_,
                        arma::mat x_cut_,
-                       int n_tree_,
-                       int node_min_size_,
+                       unsigned int n_tree_,
+                       unsigned int node_min_size_,
                        double alpha_,
                        double beta_,
                        double nu_,
@@ -116,8 +116,8 @@ modelParam_uni::modelParam_uni(arma::mat x_train_,
                        arma::vec y_mat_,
                        arma::mat x_test_,
                        arma::mat x_cut_,
-                       int n_tree_,
-                       int node_min_size_,
+                       unsigned int n_tree_,
+                       unsigned int node_min_size_,
                        double alpha_,
                        double beta_,
                        double nu_,

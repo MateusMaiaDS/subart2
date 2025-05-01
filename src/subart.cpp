@@ -50,18 +50,22 @@ void cppsubart(arma::mat x_train,
                       sv_matrix,
                       categorical_indicators);
 
+      // Only for d>2
+      if(data.d<2){
+        throw std::invalid_argument(" The y response should cannot be unidimensional for subart call");
+      }
       // Getting n_post
       unsigned int n_post = n_mcmc - n_burn;
 
       // Creating the posterior elements
-      arma::cube y_train_hat_post(data.n,data.d,n_post);
-      arma::cube y_test_hat_post(data.n_test,data.d,n_post);
-      arma::cube Sigma_post(data.d,data.d,n_post);
-      arma::cube all_Sigma_post(data.d,data.d,n_mcmc);
+      arma::cube y_train_hat_post(data.n,data.d,n_post,arma::fill::none);
+      arma::cube y_test_hat_post(data.n_test,data.d,n_post,arma::fill::none);
+      arma::cube Sigma_post(data.d,data.d,n_post,arma::fill::none);
+      arma::cube all_Sigma_post(data.d,data.d,n_mcmc,arma::fill::none);
 
-      arma::vec partial_residuals(data.n);
-      arma::cube tree_fits_store(data.n,data.n_tree,data.d);
-      arma::cube tree_fits_store_test(data.n_test,data.n_tree,data.d);
+      arma::vec partial_residuals(data.n,arma::fill::none);
+      arma::cube tree_fits_store(data.n,data.n_tree,data.d,arma::fill::zeros);
+      arma::cube tree_fits_store_test(data.n_test,data.n_tree,data.d,arma::fill::zeros);
 
 
       // Setting a vector to store the variables used in the split
@@ -81,6 +85,71 @@ void cppsubart(arma::mat x_train,
 
       for(auto nodes:all_trees){
         nodes->Stump(data);
+      }
+
+      // Creating variable to help to define which set of tree we are
+      unsigned int curr_tree_counter = 0;
+
+      // Matrix to store all predictors for all y
+      arma::mat y_mat_hat(data.n,data.d,arma::fill::none);
+      arma::mat y_mat_test_hat(data.n_test,data.d,arma::fill::none);
+
+
+      // Declaring elements necessary to perform operations across the trees
+      arma::mat prediction_train_sum(data.n,data.d,arma::fill::none);
+      arma::mat prediction_test_sum(data.n_test,data.d,arma::fill::none);
+
+      arma::vec partial_u(data.n,arma::fill::none);
+      arma::mat y_mj(data.n,data.d-1,arma::fill::none);
+      arma::mat y_hat_mj(data.n,data.d-1,arma::fill::none);
+
+      // Initializing the Sigma auxiliary objects
+      arma::mat Sigma_j_mj(1,(data.d-1),arma::fill::none); // 2d--change -- TODO: change this to a vector and make things simpler later.
+      arma::mat Sigma_mj_j((data.d-1),1,arma::fill::none); // 2d--change -- TODO: change this to a vector and make things simpler later.
+      arma::mat Sigma_mj_mj = data.Sigma; // 2d--change
+      arma::mat Sigma_mj_mj_inv((data.d-1),(data.d-1),arma::fill::none);
+
+      // Declaring Sigmas and auxiliarys int/doubles
+      double Sigma_j_j;
+      unsigned int aux_j_counter = 0;
+
+
+      for(unsigned int i = 0; i < data.n_mcmc; i ++){
+
+
+        // Do I need to initialise prediction train_test and so on as zero before?
+
+        for(unsigned int j = 0; j < data.d;j++){
+
+            // Popoulating Sigma;
+            Sigma_j_j = data.Sigma.at(j,j);
+            aux_j_counter = 0;
+
+            for(unsigned int d = 0; d < data.d; d++){
+
+              if(d!=j){
+                Sigma_j_mj.at(0,aux_j_counter) = data.Sigma.at(j,d);
+                Sigma_mj_j.at(aux_j_counter,0) = data.Sigma.at(j,d);
+                y_mj.col(aux_j_counter) = data.y_mat.col(aux_j_counter);
+                y_hat_mj.col(aux_j_counter) = data.y_mat.col(aux_j_counter);
+                aux_j_counter++;
+              }
+            }
+
+
+            // ============================================
+            // This step does not iterate over the trees!!!
+            // ============================================
+
+            Sigma_mj_mj_inv = arma::inv(Sigma_mj_mj);
+            arma::mat Sigma_calculation_aux = (Sigma_mj_j.t()*Sigma_mj_mj_inv);
+
+            for(unsigned int id_train = 0; id_train <data.n; id_train++){
+                partial_u.at(id_train) = arma::as_scalar(Sigma_calculation_aux*(y_mj.row(id_train)-y_hat_mj.row(id_train)).t());
+            }
+
+
+        }
       }
 
       return;
