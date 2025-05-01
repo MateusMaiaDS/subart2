@@ -1,11 +1,11 @@
 # devtools::load_all()
 Rcpp::sourceCpp("src/subart.cpp")
 n <- 100
-d <- 2
+d <- 3
 
 x_test <- x_train <- matrix(rnorm(n = n*d),ncol=d)
 y_mat <- matrix(rnorm(n = n*d),ncol=d)
-Sigma_init <- diag(nrow = d)
+Sigma_init <- matrix(1:(d^2),ncol = d,nrow=d)
 n_tree <- 10
 node_min_size <- 5
 n_mcmc <- 100
