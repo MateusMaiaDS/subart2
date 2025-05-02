@@ -103,9 +103,13 @@ void cppsubart(arma::mat x_train,
       arma::mat y_mj(data.n,data.d-1,arma::fill::none);
       arma::mat y_hat_mj(data.n,data.d-1,arma::fill::none);
 
+      // Avoiding transposing inside a loop
+      arma::mat y_mj_t(data.d-1,data.n,arma::fill::none);
+      arma::mat y_hat_mj_t(data.d-1,data.n,arma::fill::none);
+
       // Initializing the Sigma auxiliary objects
-      arma::mat Sigma_j_mj(1,(data.d-1),arma::fill::none); // 2d--change -- TODO: change this to a vector and make things simpler later.
-      arma::mat Sigma_mj_j((data.d-1),1,arma::fill::none); // 2d--change -- TODO: change this to a vector and make things simpler later.
+      arma::rowvec Sigma_j_mj((data.d-1),arma::fill::none); // 2d--change -- TODO: change this to a vector and make things simpler later.
+      arma::colvec Sigma_mj_j((data.d-1),arma::fill::none); // 2d--change -- TODO: change this to a vector and make things simpler later.
       arma::mat Sigma_mj_mj((data.d-1),(data.d-1),arma::fill::none); // 2d--change
       arma::mat Sigma_mj_mj_inv((data.d-1),(data.d-1),arma::fill::none);
 
@@ -113,6 +117,16 @@ void cppsubart(arma::mat x_train,
       double Sigma_j_j;
       unsigned int aux_j_counter = 0;
       unsigned int extra_aux_j_counter = 0;
+
+
+      // Creating the auxiliar predictor to update the predictions for a single tree
+      arma::vec f_j_hat(data.y_mat.n,arma::fill::zeros); // Prediction for the tree t
+      arma::vec f_j_test_hat(data.x_test.n,arma::fill::none);
+
+
+      // Creating a matrix to store the sum for each j
+      arma::mat f_sum_trees(data.n,data.d,arma::fill::zeros);
+      arma::vec f_sum_excluding_tree_j(data.n,data.d,arma::fill::zeros);
 
 
       for(unsigned int i = 0; i < data.n_mcmc; i ++){
@@ -129,8 +143,8 @@ void cppsubart(arma::mat x_train,
             for(unsigned int id_col = 0; id_col < data.d; id_col++){
 
               if(id_col!=j){
-                Sigma_j_mj.at(0,aux_j_counter) = data.Sigma.at(j,id_col);
-                Sigma_mj_j.at(aux_j_counter,0) = data.Sigma.at(j,id_col);
+                Sigma_j_mj[aux_j_counter] = data.Sigma.at(j,id_col);
+                Sigma_mj_j[aux_j_counter] = data.Sigma.at(j,id_col);
                 y_mj.unsafe_col(aux_j_counter) = data.y_mat.unsafe_col(id_col);
                 y_hat_mj.unsafe_col(aux_j_counter) = data.y_mat.unsafe_col(id_col);
                 extra_aux_j_counter = 0;
@@ -150,25 +164,48 @@ void cppsubart(arma::mat x_train,
 
             }
 
+            // Avoiding extra operations inside the id_train loop
+            y_mj_t = y_mj.t();
+            y_hat_mj_t = y_hat_mj.t();
 
             // ============================================
             // This step does not iterate over the trees!!!
             // ============================================
 
             Sigma_mj_mj_inv = arma::inv(Sigma_mj_mj);
-            arma::mat Sigma_calculation_aux = (Sigma_mj_j.t()*Sigma_mj_mj_inv);
 
             for(unsigned int id_train = 0; id_train <data.n; id_train++){
-                partial_u.at(id_train) = arma::as_scalar(Sigma_calculation_aux*(y_mj.row(id_train)-y_hat_mj.row(id_train)).t());
+                partial_u.at(id_train) = arma::as_scalar(Sigma_j_mj*(Sigma_mj_mj_inv*(y_mj_t.unsafe_col(id_train)-y_hat_mj_t.unsafe_col(id_train))));
             }
 
-            double v = Sigma_j_j - arma::as_scalar(Sigma_j_mj*Sigma_mj_mj_inv*Sigma_mj_j);
+            double v = Sigma_j_j - arma::as_scalar(Sigma_j_mj*(Sigma_mj_mj_inv*Sigma_mj_j));
+
             data.v_j = v;
 
             data.sigma_mu_j = data.sigma_mu.at(j);
 
 
             // Updating the tree
+            for(unsigned int t = 0; t < data.n_tree;t++){
+
+
+                // Current tree counter
+                curr_tree_counter = t + j*data.n_tree;
+
+                // Updating partial residuals
+                if(data.n_tree>1){
+                    f_sum_excluding_tree_j = f_sum_trees.unsafe_col(j) - tree_fits_store.slice(j).unsafe_col(t);
+                    partial_residuals = y_mat.unsafe_col(j) - f_sum_excluding_tree_j;
+                } else {
+                    partial_residuals = y_mat.unsafe_col(j);
+                }
+
+
+                // At the end of the iteration we will have
+                f_sum_trees.unsafe_col(j) = f_sum_excluding_tree_j + tree_fits_store.slice(j).unsafe_col(t); // REMEMBER TO UPDATE TREE_FITS_STORE (specifically the col(t)) BEFORE!
+
+
+            }
         }
       }
 
