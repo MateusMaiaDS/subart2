@@ -205,9 +205,9 @@ void cppsubart(arma::mat x_train,
                 f_sum_trees.unsafe_col(j) = f_sum_excluding_tree_j + tree_fits_store.slice(j).unsafe_col(t); // REMEMBER TO UPDATE TREE_FITS_STORE (specifically the col(t)) BEFORE!
 
 
-            }
-        }
-      }
+            } // End of iteration in the trees
+        } // End of the iterations of response (j)
+      } // End of the MCMC iteration
 
       return;
 }
