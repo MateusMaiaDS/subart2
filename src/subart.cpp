@@ -5,7 +5,7 @@
 
 
 // [[Rcpp::export]]
-void cppsubart(arma::mat x_train,
+Rcpp::List cppsubart(arma::mat x_train,
                    arma::mat y_mat,
                    arma::mat x_test,
                    arma::mat x_cut,
@@ -24,7 +24,8 @@ void cppsubart(arma::mat x_train,
                    bool sv_bool,
                    bool hier_prior_bool,
                    arma::mat sv_matrix,
-                   arma::uvec categorical_indicators){
+                   arma::uvec categorical_indicators,
+                   bool fit_test){
 
 
       // Posterior counter
@@ -48,7 +49,8 @@ void cppsubart(arma::mat x_train,
                       n_burn,
                       sv_bool,
                       sv_matrix,
-                      categorical_indicators);
+                      categorical_indicators,
+                      fit_test);
 
       // Only for d>2
       if(data.d<2){
@@ -120,14 +122,18 @@ void cppsubart(arma::mat x_train,
 
 
       // Creating the auxiliar predictor to update the predictions for a single tree
-      arma::vec f_j_hat(data.y_mat.n,arma::fill::zeros); // Prediction for the tree t
-      arma::vec f_j_test_hat(data.x_test.n,arma::fill::none);
+      arma::vec f_j_hat(data.n,arma::fill::zeros); // Prediction for the tree t
 
+      // Avoid to always createa vector and fill it with zeros
+      arma::vec zeros_x_test(data.n_test,arma::fill::zeros);
 
       // Creating a matrix to store the sum for each j
       arma::mat f_sum_trees(data.n,data.d,arma::fill::zeros);
       arma::vec f_sum_excluding_tree_j(data.n,data.d,arma::fill::zeros);
 
+
+      // Creating a matrix for f_sum for the test
+      arma::mat f_sum_trees_test(data.n_test,data.d,arma::fill::zeros);
 
       for(unsigned int i = 0; i < data.n_mcmc; i ++){
 
@@ -185,6 +191,11 @@ void cppsubart(arma::mat x_train,
             data.sigma_mu_j = data.sigma_mu.at(j);
 
 
+            // Initializing the the column of f_sum_trees_test as zero
+            if(data.fit_test){
+              f_sum_trees_test.unsafe_col(j) = zeros_x_test;
+            }
+
             // Updating the tree
             for(unsigned int t = 0; t < data.n_tree;t++){
 
@@ -201,13 +212,71 @@ void cppsubart(arma::mat x_train,
                 }
 
 
+
+                // Sampling the verb
+                verb = arma::randu(arma::distr_param(0.0,1.0));
+
+                if(all_trees[curr_tree_counter]->isLeaf){ // Is pointing to the root of the current tree
+                  verb = 0.1;
+                }
+
+                // Selecting each verb -- Here I considering the probability of Grow:0.3, Prune: 0.3, and Change = 0.4 -- May need to reavulate those
+                if(verb < 0.3) {
+                  data.move_proposal.at(0)++;
+                  grow(all_trees[curr_tree_counter],data,partial_residuals,partial_u,j);
+                } else if(verb >= 0.3 & verb < 0.6){
+                  data.move_proposal.at(1)++;
+                  prune(all_trees[curr_tree_counter],data,partial_residuals,partial_u,j);
+                } else {
+                  data.move_proposal(2)++;
+                  change(all_trees[curr_tree_counter],data,partial_residuals,partial_u,j);
+                }
+
+                // Updating Mu and Predictions
+                update_mu_and_predictions(all_trees[curr_tree_counter],tree_fits_store,tree_fits_store_test);
+
+
                 // At the end of the iteration we will have
                 f_sum_trees.unsafe_col(j) = f_sum_excluding_tree_j + tree_fits_store.slice(j).unsafe_col(t); // REMEMBER TO UPDATE TREE_FITS_STORE (specifically the col(t)) BEFORE!
 
+                // Only if fitting test
+                if(data.fit_test){
+                  f_sum_trees_test.unsafe_col(j) = f_sum_trees_test.unsafe_col(t) + tree_fits_store_test.slice(j).unsafe_col(t);
+                }
+                // Add latter : add the variable selection step. I.e: which variables are used and which are not
 
             } // End of iteration in the trees
         } // End of the iterations of response (j)
+
+
+        // Updating the covariance matrix
+        update_a_j(data);
+        updateSigma(f_sum_trees,data);
+
+
+        // Storing all_Sigma
+        all_Sigma_post.slice(i) = data.Sigma;
+
+        // Storing MCMC iterations
+        if(i >= n_burn){
+
+          y_train_hat_post.slice(curr) = f_sum_trees;
+
+          if(data.fit_test){
+              y_test_hat_post.slice(curr) = y_mat_test_hat;
+          }
+
+          Sigma_post.slice(curr) = data.Sigma;
+          curr++;
+
+        }
+
+
       } // End of the MCMC iteration
 
-      return;
+      return Rcpp::List::create(y_train_hat_post, // [1]
+                                y_test_hat_post, // [2]
+                                Sigma_post, // [3]
+                                all_Sigma_post // [4]
+                                )
 }

@@ -49,7 +49,8 @@ modelParam::modelParam(arma::mat x_train_,
                        double n_burn_,
                        bool sv_bool_,
                        arma::mat sv_matrix_,
-                       arma::uvec categorical_indicators_){
+                       arma::uvec categorical_indicators_,
+                       bool fit_test_){
 
 
   // Assign the variables
@@ -111,6 +112,9 @@ modelParam::modelParam(arma::mat x_train_,
   }
 
   categorical_indicators_bool = count_cat_indicator==0 ? false: true;
+
+  // Decide to wether update the fit_test or not;
+  fit_test = fit_test_;
 
 }
 

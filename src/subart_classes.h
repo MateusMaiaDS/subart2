@@ -60,6 +60,9 @@ struct modelParam {
   double v_j;
   double sigma_mu_j;
 
+  // A boolean to update or not the test
+  bool fit_test;
+
   // Defining the constructor for the model param
   modelParam(arma::mat x_train_,
              arma::mat y_mat_,
@@ -78,7 +81,8 @@ struct modelParam {
              double n_burn_,
              bool sv_bool_,
              arma::mat sv_matrix_,
-             arma::uvec categorical_indicators_);
+             arma::uvec categorical_indicators_,
+             bool fit_test_);
 
 };
 
