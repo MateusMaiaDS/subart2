@@ -17,6 +17,8 @@ Node::Node(){
   log_likelihood = 0.0;
   depth = 0;
 
+  left -> lower = 0.0;
+  left -> upper = 1.0;
 
 }
 
@@ -91,12 +93,18 @@ modelParam::modelParam(arma::mat x_train_,
   sv_bool = sv_bool_;
   sv_matrix = sv_matrix_;
 
+  sigma_mu_j = arma::vec(d,arma::fill::none);
+  sigma_mu_j_sq = arma::vec(d,arma::fill::none);
+
+
   // Generating the elements for the correlation matrix
   R = Sigma_;
   D = arma::mat(d,d); // There is more efficient way to declare the diagonal matrix without using arma::eye?
 
   for(arma::uword i = 0; i<d;i++){
     D.at(i,i) = 1.0;
+    sigma_mu_j = sigma_mu_.at(i);
+    sigma_mu_j_sq = sigma_mu_j*sigma_mu_j; // This operation can be done when constructing it
   }
   // Grow acceptation ratio
   for(unsigned int i = 0; i<3;i++){

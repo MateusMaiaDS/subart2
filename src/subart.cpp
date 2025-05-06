@@ -132,6 +132,7 @@ Rcpp::List cppsubart(arma::mat x_train,
       arma::vec f_sum_excluding_tree_j(data.n,data.d,arma::fill::zeros);
 
 
+
       // Creating a matrix for f_sum for the test
       arma::mat f_sum_trees_test(data.n_test,data.d,arma::fill::zeros);
 
@@ -187,8 +188,6 @@ Rcpp::List cppsubart(arma::mat x_train,
             double v = Sigma_j_j - arma::as_scalar(Sigma_j_mj*(Sigma_mj_mj_inv*Sigma_mj_j));
 
             data.v_j = v;
-
-            data.sigma_mu_j = data.sigma_mu.at(j);
 
 
             // Initializing the the column of f_sum_trees_test as zero

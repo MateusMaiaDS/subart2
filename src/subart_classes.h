@@ -58,7 +58,8 @@ struct modelParam {
 
   // Elements to be used in the loglikelihood update and mu update
   double v_j;
-  double sigma_mu_j;
+  arma::vec sigma_mu_j;
+  arma::vec sigma_mu_j_sq;
 
   // A boolean to update or not the test
   bool fit_test;
@@ -137,6 +138,7 @@ struct modelParam_uni {
   // Elements to be used in the loglikelihood update and mu update
   double v_j;
   double sigma_mu_j;
+  double sigma_mu_j_sq;
 
   // Defining the constructor for the model param
   modelParam_uni(arma::mat x_train_,
@@ -189,7 +191,6 @@ struct Node {
   double r_sum = 0.0;
   double u_sum = 0.0;
   double Gamma_j;
-  double sigma_mu_j_sq;
   double S_j;
 
 
@@ -204,13 +205,13 @@ struct Node {
   void getLimits(); // This function will get previous limit for the current var
   bool isLeft();
   bool isRight();
-  void grow(Node* tree, modelParam &data, arma::vec &curr_res, arma::vec &curr_u);
-  void prune(Node* tree, modelParam &data, arma::vec&curr_res, arma::vec &curr_u);
-  void change(Node* tree, modelParam &data, arma::vec&curr_res, arma::vec &curr_u);
+  void grow(Node* tree, modelParam &data, arma::vec &curr_res, arma::vec &curr_u,unsigned int &j);
+  void prune(Node* tree, modelParam &data, arma::vec&curr_res, arma::vec &curr_u,unsigned int &j);
+  void change(Node* tree, modelParam &data, arma::vec&curr_res, arma::vec &curr_u,unsigned int &j);
 
-  void nodeLogLike(modelParam &data);
-  void updateResiduals(modelParam& data, arma::vec &curr_res, arma::vec &curr_u);
-  void updateResiduals_uni(modelParam& data, arma::vec &curr_res);
+  void nodeLogLike(modelParam &data, unsigned int &j);
+  void updateResiduals(modelParam& data, arma::vec &curr_res, arma::vec &curr_u, unsigned int &j);
+  void updateResiduals_uni(modelParam& data, arma::vec &curr_res, unsigned int &j);
   void displayCurrNode();
 
   Node();
