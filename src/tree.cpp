@@ -75,7 +75,7 @@ void Node::nodeLogLike(modelParam& data, unsigned int& j){
 
 }
 
-void Node::addingLeaves(modelParam &data){
+void Node::addingLeaves(){
 
   // Create the two new nodes
   left = new Node(); // Creating a new vector object to the
@@ -99,6 +99,51 @@ void Node::addingLeaves(modelParam &data){
 
 
   return;
+}
+
+void Node::getLimits(unsigned int split_var_candidate,
+                      double &lower_candidate,
+                      double &upper_candidate){
+
+  Node* dummy_node = this;
+  lower_candidate = 0.0;
+  upper_candidate = 1.0;
+
+  bool node_bool = dummy_node->isRoot ? false : true;
+  while(node_bool) {
+
+    bool is_left = dummy_node->isLeft();
+    dummy_node = dummy_node->parent;
+    node_bool = dummy_node->isRoot ? false : true;
+
+    if(dummy_node->var_split == split_var_candidate){
+      node_bool = false; // This is false because all the other parents from it will already carry the information from lower and upper from previous nodes
+
+      if(is_left){
+        upper = dummy_node->var_split_rule; //This is simple, think about a simple tree wiht two nodes, if the rule from the parent is x_{1}<5, and we are trying to grow its children, if the left node all values should be already below to 5
+        lower = dummy_node->lower;
+      }  else {
+        upper = dummy_node->upper;
+        lower = dummy_node->var_split_rule;// Same logic as before, as all values are above 5 the lower limit become its value
+      }
+    }
+  }
+
+}
+
+double sample_split_var_rule_from_xcut(arma::vec& xcut_col, double lower_candidate, double upper_candidate) {
+  const double* start = std::lower_bound(xcut_col.begin(), xcut_col.end(), lower_candidate + std::numeric_limits<double>::epsilon());
+  const double* end = std::lower_bound(xcut_col.begin(), xcut_col.end(), upper_candidate);
+
+  arma::uword length = end - start;
+
+  if (length == 0) {
+    return -1.0; // No value in range
+  }
+
+  // Uniform discrete sampling: generate an index in [0, length-1]
+  arma::uword random_index = arma::randi<arma::uword>(arma::distr_param(0, length - 1));
+  return *(start + random_index);
 }
 
 void Node::grow(Node *tree,
@@ -129,20 +174,44 @@ void Node::grow(Node *tree,
     leaf->updateResiduals(data,curr_res,curr_u,j);
   }
 
-  // Update the residuals and return the same tree
-  if(g_node->n_leaf < 2){
+  // Residuals already updted, if the selected g_node only have 2/less observations there's no point of growing it
+  if(g_node->n_leaf <= 2){
     return;
   }
 
   // Selecting a splitting variable and a split rule
   //(explore the logic of selecting a good candidate for the split rule)
-  g_node->var_split_rule = 1.0;
+  unsigned int var_split_candidate = arma::randi<arma::uword>(arma::distr_param(0, data.d - 1));
 
+
+  double lower_candidate;
+  double upper_candidate;
+
+  // Obtaining the limits
+  g_node->getLimits(var_split_candidate,
+                    lower_candidate,
+                    upper_candidate);
+
+  // No valid split_var_cutpoint is available
+  if(lower_candidate==upper_candidate){
+    return;
+  }
+
+  arma::vec var_split_rule_numcuts = data.xcut.col(var_split_candidate);
+
+  double var_split_rule_candidate = sample_split_var_rule_from_xcut(var_split_rule_numcuts,
+                                                                    lower_candidate,
+                                                                    upper_candidate); //
+
+  // If not valid split vars are found
+  if(var_split_candidate==-1.0){
+    return;
+  }
 
   // Assigned left and right for the current train index
   arma::vec left_id = train_index;
   arma::vec right_id  = train_index;
-  int left_id_counter = 0;
+  unsigned int left_id_counter = 0;
   unsigned int right_id_counter = 0;
 
 
@@ -155,7 +224,7 @@ void Node::grow(Node *tree,
   for(auto& id:train_index){
 
     // Here I will update the r_sum and u_sum to avoid to go over through the same iterations when doing left->updateResiduals()
-    if(data.x_train.at(id,g_node->var_split) <= g_node->var_split_rule ){
+    if(data.x_train.at(id,var_split_candidate) <= var_split_rule_candidate ){
 
       left_id[left_id_counter] = id;
       r_sum_left = r_sum_left + curr_res[id];
@@ -186,16 +255,69 @@ void Node::grow(Node *tree,
 
 
   // Updating other sufficientStatistics;
+  Gamma_j_left = left_id_counter+data.v_j/data.sigma_mu_j_sq[j];
+  S_j_left = r_sum_left-u_sum_left;
 
-  g_node->addingLeaves(data)
+  Gamma_j_right = right_id_counter+data.v_j/data.sigma_mu_j_sq[j];
+  S_j_right = r_sum_right-u_sum_right;
+
 
   // Calculate sufficient statistics for the left and right node outside the UpdateResiduals function.
 
-  // ,,,,,,,,,,,,,,,,,,,,,,,,,,,
-  // ,,,, continue from here ,,,
-  // ,,,,,,,,,,,,,,,,,,,,,,,,,,,
-  left_id.resize(left_id_counter); // Maybe in a future think a way of using arma::set_size? which is much faster
-  right_id.resize(right_id_counter); // Maybe in the future thinkk in a way of us arma::set_size? which is much faster.
+  double new_tree_log_likelihood_ratio = 0.5*log(2*arma::datum::pi*data.sigma_mu_j_sq[j])-0.5*log(data.v_j)+ // Remaninig from the operation like_left_node + like_right_node - like_g_node
+                                       (-0.5*log(Gamma_j_left) + 0.5*(S_j_left*S_j_left)/(data.v_j*Gamma_j_left)) + // Core of the likelihood of the left node
+                                       (-0.5*log(Gamma_j_right) + 0.5*(S_j_right*S_j_right)/(data.v_j*Gamma_j_right))- // Core of the likelihood of the left node
+                                       (-0.5*log(g_node->Gamma_j) + 0.5*(S_j*S_j)/(data.v_j*g_node->Gamma_j)); // Core of the likelihood for the grown node
 
+  // Reminder the node_log_likelihood is:
+  // node->log_likelihood = -0.5*log(2*arma::datum::pi*sigma_mu_j_sq[j])+0.5*log(data.v_j/node->Gamma_j) +0.5*(S_j*S_j)/(data.v_j*node->Gamma_j);
+
+
+  // Computing the tree prior
+  double log_tree_prior = log(data.alpha*pow(1+g_node->depth,-data.beta)) +
+    2*log(1-data.alpha*pow((1+g_node->depth+1),-data.beta)) -
+    log(1-data.alpha*pow(1+g_node->depth,-data.beta));
+
+  // Getting the transition probability
+  double log_transition_prob = log((0.3)/(nog_nodes.size()+1)) - log(0.3/t_nodes.size()); // 0.3 and 0.3 are the prob of Prune and Grow, respectively
+
+  // Calculating the acceptance ratio
+  double acceptance = exp(new_tree_log_likelihood_ratio + log_tree_prior + log_transition_prob);
+
+
+  if(arma::randu(arma::distr_param(0.0,1.0)) < acceptance){
+
+    left_id.resize(left_id_counter); // Maybe in a future think a way of using arma::set_size? which is much faster
+    right_id.resize(right_id_counter); // Maybe in the future thinkk in a way of us arma::set_size? which is much faster.
+
+    // Updating the g_node
+    g_node->addingLeaves();
+    g_node->var_split = var_split_candidate;
+    g_node->var_split_rule = var_split_rule_candidate;
+    g_node->upper = upper_candidate;
+    g_node->lower = lower_candidate;
+
+    // Updating sufficient statistics for the left node
+    g_node->left->train_index = left_id;
+    g_node->left->n_leaf = left_id_counter;
+    // g_node->left->test_index = left_id_test; // TODO: implement the test index here
+    g_node->left->S_j = S_j_left;
+    g_node->left->Gamma_j = Gamma_j_left;
+
+    // Updating sufficient statistics for the right node
+    g_node->right->train_index = right_id;
+    g_node->right->n_leaf = right_id_counter;
+    // g_node->right->test_index = right_id_test; // TODO: implement the test index here
+    g_node->right->S_j = S_j_right;
+    g_node->right->Gamma_j = Gamma_j_right;
+
+  } else {
+
+    // Not need to modify anything all the nodes are already updated
+
+  }
+
+
+  return;
 
 }

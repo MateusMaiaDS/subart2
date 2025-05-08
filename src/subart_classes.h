@@ -198,11 +198,13 @@ struct Node {
   unsigned int n_leaf_test = 0;
 
   // Creating the methods
-  void addingLeaves(modelParam& data);
+  void addingLeaves();
   void deletingLeaves();
   void Stump(modelParam& data);
   void updateWeight(const arma::mat X, int i);
-  void getLimits(); // This function will get previous limit for the current var
+  void getLimits(unsigned int split_var_candidate,
+                 double &lower_candidate,
+                 double &upper_candidate); // This function will get previous limit for the current var
   bool isLeft();
   bool isRight();
   void grow(Node* tree, modelParam &data, arma::vec &curr_res, arma::vec &curr_u,unsigned int &j);

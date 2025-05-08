@@ -22,6 +22,11 @@ Node::Node(){
 
 }
 
+bool Node::isLeft() {
+  if(parent == NULL) return true;
+  return (this == parent->left);
+}
+
 Node::~Node() {
   if(!(left == NULL)) {
     delete left;
