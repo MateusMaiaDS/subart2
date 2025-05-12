@@ -101,6 +101,20 @@ void Node::addingLeaves(){
   return;
 }
 
+
+void Node::deletingLeaves(){
+
+  // Deleting
+  delete left; // This release the memory from the left point
+  delete right; // This release the memory from the right point
+  left = this;  // The new pointer for the left become the node itself
+  right = this; // The new pointer for the right become the node itself
+  isLeaf = true;
+
+  return;
+
+}
+
 void Node::getLimits(unsigned int split_var_candidate,
                       double &lower_candidate,
                       double &upper_candidate){
@@ -164,7 +178,7 @@ void Node::grow(Node *tree,
   unsigned int number_leaves = t_nodes.size();
 
   // If the tree os a rooot
-  if(tree->isRoot){
+  if(tree->isRoot & tree->isLeaf){
     g_node = &tree[0];
   } else {
     g_node = t_nodes[arma::randi(arma::distr_param(0,(number_leaves-1)))];
@@ -264,7 +278,7 @@ void Node::grow(Node *tree,
 
   // Calculate sufficient statistics for the left and right node outside the UpdateResiduals function.
 
-  double new_tree_log_likelihood_ratio = 0.5*log(2*arma::datum::pi*data.sigma_mu_j_sq[j])-0.5*log(data.v_j)+ // Remaninig from the operation like_left_node + like_right_node - like_g_node
+  double new_tree_log_likelihood_ratio = -0.5*log(2*arma::datum::pi*data.sigma_mu_j_sq[j])+0.5*log(data.v_j)+ // Remaninig from the operation like_left_node + like_right_node - like_g_node
                                        (-0.5*log(Gamma_j_left) + 0.5*(S_j_left*S_j_left)/(data.v_j*Gamma_j_left)) + // Core of the likelihood of the left node
                                        (-0.5*log(Gamma_j_right) + 0.5*(S_j_right*S_j_right)/(data.v_j*Gamma_j_right))- // Core of the likelihood of the left node
                                        (-0.5*log(g_node->Gamma_j) + 0.5*(S_j*S_j)/(data.v_j*g_node->Gamma_j)); // Core of the likelihood for the grown node
@@ -321,3 +335,96 @@ void Node::grow(Node *tree,
   return;
 
 }
+
+void Node::prune(Node *tree,
+                modelParam &data,
+                arma::vec &curr_res,
+                arma::vec &curr_u,
+                unsigned int &j){
+
+
+  // Getting the number of terminal nodes
+  std::vector<Node*> t_nodes(0);
+  std::vector<Node*> nog_nodes(0);
+
+  get_leaves(tree,t_nodes);
+  get_nogs(tree,nog_nodes);
+
+  Node* p_node;
+  unsigned int number_leaves = t_nodes.size();
+  unsigned nt number_nogs = nog_nodes.size();
+
+  // If the tree os a rooot
+  if(tree->isRoot & tree->isLeaf){
+    p_node = &tree[0];
+  } else {
+    g_node = t_nodes[arma::randi(arma::distr_param(0,(number_nogs-1)))];
+  }
+
+  for(auto& leaf:t_nodes){
+    leaf->updateResiduals(data,curr_res,curr_u,j);
+  }
+
+
+
+  // Calculating the likelhood for the grown node
+
+
+  double r_sum = 0.0;
+  double u_sum = 0.0;
+
+  for(auto& id:p_node->train_index){
+    r_sum = r_sum + curr_res[id];
+    u_sum = u_sum + curr_res[id];
+  }
+
+
+  // Calculating sufficient statistics for left and right nodes
+  double p_Gamma_j;
+  double p_S_j;
+
+  // Updating other sufficientStatistics;
+  p_Gamma_j = p_node->n_leaf+data.v_j/data.sigma_mu_j_sq[j];
+  p_S_j = r_sum-u_sum;
+
+  // Calculate sufficient statistics for the left and right node outside the UpdateResiduals function.
+
+  double new_tree_log_likelihood_ratio = 0.5*log(2*arma::datum::pi*data.sigma_mu_j_sq[j])-0.5*log(data.v_j)+ // Remaninig from the operation  like_g_node - (like_left_node + like_right_node -)
+    (-0.5*log(p_Gamma_j) + 0.5*(p_S_j*p_S_j)/(data.v_j*p_Gamma_j))- // Core of the likelihood for the prune node
+    (-0.5*log(p_node->left->Gamma_j) + 0.5*(p_node->left->S_j*p_node->left->S_j)/(data.v_j*p_node->left->Gamma_j)) - // Core of the likelihood of the left node
+    (-0.5*log(p_node->right->Gamma_j) + 0.5*(p_node->right->S_j*p_node->right->S_j)/(data.v_j*p_node->right->Gamma_j)); // Core of the likelihood of the left node
+
+  // Reminder the node_log_likelihood is:
+  // node->log_likelihood = -0.5*log(2*arma::datum::pi*sigma_mu_j_sq[j])+0.5*log(data.v_j/node->Gamma_j) +0.5*(S_j*S_j)/(data.v_j*node->Gamma_j);
+
+
+  // Computing the tree prior
+  double tree_prior = log(1-data.alpha*pow((1+p_node->depth),-data.beta))-  //Prior of the p_node being terminal
+    log(data.alpha*pow((1+p_node->depth),-data.beta)) - // Prior of the p_node being non-terminal
+    2*log(1-data.alpha*pow((1+p_node->depth+1),-data.beta)) ;  // Prior of the right & left noide being terminal
+
+  // Calculating the transition loglikelihood
+  double transition_loglike = log((0.3)/(number_leaves)) - log((0.3)/(number_nogs));
+
+  // Calculating the acceptance ratio
+  double acceptance = exp(new_tree_log_likelihood_ratio + log_tree_prior + log_transition_prob);
+
+
+  if(arma::randu(arma::distr_param(0.0,1.0)) < acceptance){
+
+    // Updating the g_node
+    p_node->deletingLeaves();
+    p_node->S_j = p_S_j;
+    p_node->Gamma_j = p_Gamma_j;
+
+  } else {
+
+    // Not need to modify anything all the nodes are already updated
+
+  }
+
+
+  return;
+
+}
+
