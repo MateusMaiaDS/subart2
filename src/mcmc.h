@@ -1,0 +1,15 @@
+#ifndef SUBART_MCMC_H
+#define SUBART_MCMC_H
+
+void update_mu_and_predictions(Node* tree,
+                              modelParam &data,
+                              arma::cube &trees_fit_store,
+                              arma::cube &trees_fit_store_test,
+                              unsigned int &t,
+                              unsigned int &j);
+
+void update_a_j(modelParam &data);
+void updateSigma(arma::mat &f_sum_trees,modelParam &data);
+
+
+#endif

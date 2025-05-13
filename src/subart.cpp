@@ -1,5 +1,6 @@
 #include "subart_classes.h"
 #include "tree.h"
+#include "mcmc.h"
 #include <RcppArmadillo.h>
 
 
@@ -66,8 +67,8 @@ Rcpp::List cppsubart(arma::mat x_train,
       arma::cube all_Sigma_post(data.d,data.d,n_mcmc,arma::fill::none);
 
       arma::vec partial_residuals(data.n,arma::fill::none);
-      arma::cube tree_fits_store(data.n,data.n_tree,data.d,arma::fill::zeros);
-      arma::cube tree_fits_store_test(data.n_test,data.n_tree,data.d,arma::fill::zeros);
+      arma::cube trees_fit_store(data.n,data.n_tree,data.d,arma::fill::zeros);
+      arma::cube trees_fit_store_test(data.n_test,data.n_tree,data.d,arma::fill::zeros);
 
 
       // Setting a vector to store the variables used in the split
@@ -204,7 +205,7 @@ Rcpp::List cppsubart(arma::mat x_train,
 
                 // Updating partial residuals
                 if(data.n_tree>1){
-                    f_sum_excluding_tree_j = f_sum_trees.unsafe_col(j) - tree_fits_store.slice(j).unsafe_col(t);
+                    f_sum_excluding_tree_j = f_sum_trees.unsafe_col(j) - trees_fit_store.slice(j).unsafe_col(t);
                     partial_residuals = y_mat.unsafe_col(j) - f_sum_excluding_tree_j;
                 } else {
                     partial_residuals = y_mat.unsafe_col(j);
@@ -223,24 +224,26 @@ Rcpp::List cppsubart(arma::mat x_train,
                 if(verb < 0.3) {
                   data.move_proposal.at(0)++;
                   grow(all_trees[curr_tree_counter],data,partial_residuals,partial_u,j);
-                } else if(verb >= 0.3 & verb < 0.6){
+                } else if((verb >= 0.3) & (verb < 0.6)){
                   data.move_proposal.at(1)++;
                   prune(all_trees[curr_tree_counter],data,partial_residuals,partial_u,j);
                 } else {
                   data.move_proposal(2)++;
-                  change(all_trees[curr_tree_counter],data,partial_residuals,partial_u,j);
+                  // change(all_trees[curr_tree_counter],data,partial_residuals,partial_u,j); // Do change later
+                  grow(all_trees[curr_tree_counter],data,partial_residuals,partial_u,j);
+
                 }
 
                 // Updating Mu and Predictions
-                update_mu_and_predictions(all_trees[curr_tree_counter],tree_fits_store,tree_fits_store_test);
+                update_mu_and_predictions(all_trees[curr_tree_counter],data,trees_fit_store,trees_fit_store_test,t,j);
 
 
                 // At the end of the iteration we will have
-                f_sum_trees.unsafe_col(j) = f_sum_excluding_tree_j + tree_fits_store.slice(j).unsafe_col(t); // REMEMBER TO UPDATE TREE_FITS_STORE (specifically the col(t)) BEFORE!
+                f_sum_trees.unsafe_col(j) = f_sum_excluding_tree_j + trees_fit_store.slice(j).unsafe_col(t); // REMEMBER TO UPDATE trees_fit_store (specifically the col(t)) BEFORE!
 
                 // Only if fitting test
                 if(data.fit_test){
-                  f_sum_trees_test.unsafe_col(j) = f_sum_trees_test.unsafe_col(t) + tree_fits_store_test.slice(j).unsafe_col(t);
+                  f_sum_trees_test.unsafe_col(j) = f_sum_trees_test.unsafe_col(t) + trees_fit_store_test.slice(j).unsafe_col(t);
                 }
                 // Add latter : add the variable selection step. I.e: which variables are used and which are not
 
@@ -277,5 +280,5 @@ Rcpp::List cppsubart(arma::mat x_train,
                                 y_test_hat_post, // [2]
                                 Sigma_post, // [3]
                                 all_Sigma_post // [4]
-                                )
+                                );
 }

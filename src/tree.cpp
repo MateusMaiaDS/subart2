@@ -60,7 +60,7 @@ void Node::updateResiduals(modelParam& data,
     u_sum = u_sum + curr_u.at(id);
   }
 
-  Gamma_j  = n_leaf+data.v_j/data.sigma_mu_j_sq;
+  Gamma_j  = n_leaf+data.v_j/data.sigma_mu_j_sq.at(j);
   S_j = r_sum-u_sum;
 
   return;
@@ -160,11 +160,11 @@ double sample_split_var_rule_from_xcut(arma::vec& xcut_col, double lower_candida
   return *(start + random_index);
 }
 
-void Node::grow(Node *tree,
-                modelParam &data,
-                arma::vec &curr_res,
-                arma::vec &curr_u,
-                unsigned int &j){
+void grow(Node *tree,
+          modelParam &data,
+          arma::vec &curr_res,
+          arma::vec &curr_u,
+          unsigned int &j){
 
 
   // Getting the number of terminal nodes
@@ -223,8 +223,8 @@ void Node::grow(Node *tree,
   }
 
   // Assigned left and right for the current train index
-  arma::vec left_id = train_index;
-  arma::vec right_id  = train_index;
+  arma::uvec left_id = g_node->train_index;
+  arma::uvec right_id  = g_node->train_index;
   unsigned int left_id_counter = 0;
   unsigned int right_id_counter = 0;
 
@@ -235,7 +235,7 @@ void Node::grow(Node *tree,
   double r_sum_right = 0.0;
   double u_sum_right = 0.0;
 
-  for(auto& id:train_index){
+  for(auto& id:g_node->train_index){
 
     // Here I will update the r_sum and u_sum to avoid to go over through the same iterations when doing left->updateResiduals()
     if(data.x_train.at(id,var_split_candidate) <= var_split_rule_candidate ){
@@ -247,7 +247,7 @@ void Node::grow(Node *tree,
       left_id_counter++;
     } else {
 
-      right[right_id_counter] = id;
+      right_id[right_id_counter] = id;
       r_sum_right = r_sum_right + curr_res[id];
       u_sum_right = u_sum_right + curr_res[id];
       right_id_counter++;
@@ -281,22 +281,22 @@ void Node::grow(Node *tree,
   double new_tree_log_likelihood_ratio = -0.5*log(2*arma::datum::pi*data.sigma_mu_j_sq[j])+0.5*log(data.v_j)+ // Remaninig from the operation like_left_node + like_right_node - like_g_node
                                        (-0.5*log(Gamma_j_left) + 0.5*(S_j_left*S_j_left)/(data.v_j*Gamma_j_left)) + // Core of the likelihood of the left node
                                        (-0.5*log(Gamma_j_right) + 0.5*(S_j_right*S_j_right)/(data.v_j*Gamma_j_right))- // Core of the likelihood of the left node
-                                       (-0.5*log(g_node->Gamma_j) + 0.5*(S_j*S_j)/(data.v_j*g_node->Gamma_j)); // Core of the likelihood for the grown node
+                                       (-0.5*log(g_node->Gamma_j) + 0.5*(g_node->S_j*g_node->S_j)/(data.v_j*g_node->Gamma_j)); // Core of the likelihood for the grown node
 
   // Reminder the node_log_likelihood is:
   // node->log_likelihood = -0.5*log(2*arma::datum::pi*sigma_mu_j_sq[j])+0.5*log(data.v_j/node->Gamma_j) +0.5*(S_j*S_j)/(data.v_j*node->Gamma_j);
 
 
   // Computing the tree prior
-  double log_tree_prior = log(data.alpha*pow(1+g_node->depth,-data.beta)) +
+  double log_tree_prior_ratio = log(data.alpha*pow(1+g_node->depth,-data.beta)) +
     2*log(1-data.alpha*pow((1+g_node->depth+1),-data.beta)) -
     log(1-data.alpha*pow(1+g_node->depth,-data.beta));
 
   // Getting the transition probability
-  double log_transition_prob = log((0.3)/(nog_nodes.size()+1)) - log(0.3/t_nodes.size()); // 0.3 and 0.3 are the prob of Prune and Grow, respectively
+  double log_transition_prob_ratio = log((0.3)/(nog_nodes.size()+1)) - log(0.3/t_nodes.size()); // 0.3 and 0.3 are the prob of Prune and Grow, respectively
 
   // Calculating the acceptance ratio
-  double acceptance = exp(new_tree_log_likelihood_ratio + log_tree_prior + log_transition_prob);
+  double acceptance = exp(new_tree_log_likelihood_ratio + log_tree_prior_ratio + log_transition_prob_ratio);
 
 
   if(arma::randu(arma::distr_param(0.0,1.0)) < acceptance){
@@ -336,11 +336,11 @@ void Node::grow(Node *tree,
 
 }
 
-void Node::prune(Node *tree,
-                modelParam &data,
-                arma::vec &curr_res,
-                arma::vec &curr_u,
-                unsigned int &j){
+void prune(Node *tree,
+          modelParam &data,
+          arma::vec &curr_res,
+          arma::vec &curr_u,
+          unsigned int &j){
 
 
   // Getting the number of terminal nodes
@@ -352,13 +352,13 @@ void Node::prune(Node *tree,
 
   Node* p_node;
   unsigned int number_leaves = t_nodes.size();
-  unsigned nt number_nogs = nog_nodes.size();
+  unsigned int number_nogs = nog_nodes.size();
 
   // If the tree os a rooot
   if(tree->isRoot & tree->isLeaf){
     p_node = &tree[0];
   } else {
-    g_node = t_nodes[arma::randi(arma::distr_param(0,(number_nogs-1)))];
+    p_node = t_nodes[arma::randi(arma::distr_param(0,(number_nogs-1)))];
   }
 
   for(auto& leaf:t_nodes){
@@ -399,15 +399,15 @@ void Node::prune(Node *tree,
 
 
   // Computing the tree prior
-  double tree_prior = log(1-data.alpha*pow((1+p_node->depth),-data.beta))-  //Prior of the p_node being terminal
+  double log_tree_prior_ratio = log(1-data.alpha*pow((1+p_node->depth),-data.beta))-  //Prior of the p_node being terminal
     log(data.alpha*pow((1+p_node->depth),-data.beta)) - // Prior of the p_node being non-terminal
     2*log(1-data.alpha*pow((1+p_node->depth+1),-data.beta)) ;  // Prior of the right & left noide being terminal
 
   // Calculating the transition loglikelihood
-  double transition_loglike = log((0.3)/(number_leaves)) - log((0.3)/(number_nogs));
+  double log_transition_ratio = log((0.3)/(number_leaves)) - log((0.3)/(number_nogs));
 
   // Calculating the acceptance ratio
-  double acceptance = exp(new_tree_log_likelihood_ratio + log_tree_prior + log_transition_prob);
+  double acceptance = exp(new_tree_log_likelihood_ratio + log_tree_prior_ratio + log_transition_ratio);
 
 
   if(arma::randu(arma::distr_param(0.0,1.0)) < acceptance){
@@ -427,4 +427,3 @@ void Node::prune(Node *tree,
   return;
 
 }
-

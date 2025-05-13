@@ -24,8 +24,8 @@ struct modelParam {
   arma::uvec init_test_index;
 
   // BART prior param specification
-  int n_tree;
-  int d_var; // Dimension of variables in my base
+  unsigned int n_tree;
+  unsigned int d_var; // Dimension of variables in my base
   double alpha;
   double beta;
   arma::vec sigma_mu;
@@ -207,10 +207,9 @@ struct Node {
                  double &upper_candidate); // This function will get previous limit for the current var
   bool isLeft();
   bool isRight();
-  void grow(Node* tree, modelParam &data, arma::vec &curr_res, arma::vec &curr_u,unsigned int &j);
-  void prune(Node* tree, modelParam &data, arma::vec&curr_res, arma::vec &curr_u,unsigned int &j);
-  void change(Node* tree, modelParam &data, arma::vec&curr_res, arma::vec &curr_u,unsigned int &j);
-
+  // void grow(Node* tree, modelParam &data, arma::vec &curr_res, arma::vec &curr_u,unsigned int &j);
+  // void prune(Node* tree, modelParam &data, arma::vec&curr_res, arma::vec &curr_u,unsigned int &j);
+  // void change(Node* tree, modelParam &data, arma::vec&curr_res, arma::vec &curr_u,unsigned int &j);
   void nodeLogLike(modelParam &data, unsigned int &j);
   void updateResiduals(modelParam& data, arma::vec &curr_res, arma::vec &curr_u, unsigned int &j);
   void updateResiduals_uni(modelParam& data, arma::vec &curr_res, unsigned int &j);
