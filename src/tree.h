@@ -1,6 +1,7 @@
 #ifndef TREE_H
 #define TREE_H
 
+#include "subart_classes.h"
 
 void get_leaves(Node* x,  std::vector<Node*> &leaves_vec);
 void get_nogs(Node* node,std::vector<Node*>& nogs);
