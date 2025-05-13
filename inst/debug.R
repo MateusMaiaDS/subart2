@@ -50,4 +50,5 @@ cppsubart(x_train,
           sv_bool,
           hier_prior_bool,
           sv_matrix,
-          categorical_indicators)
+          categorical_indicators,
+          FALSE)

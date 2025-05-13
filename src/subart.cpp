@@ -6,7 +6,7 @@
 
 
 // [[Rcpp::export]]
-Rcpp::List cppsubart(arma::mat x_train,
+int cppsubart(arma::mat x_train,
                    arma::mat y_mat,
                    arma::mat x_test,
                    arma::mat x_cut,
@@ -85,6 +85,7 @@ Rcpp::List cppsubart(arma::mat x_train,
       for(auto trees= all_trees.begin(); trees!=all_trees.end(); trees++){
         *trees = new Node();
       }
+
 
       for(auto nodes:all_trees){
         nodes->Stump(data);
@@ -276,9 +277,5 @@ Rcpp::List cppsubart(arma::mat x_train,
 
       } // End of the MCMC iteration
 
-      return Rcpp::List::create(y_train_hat_post, // [1]
-                                y_test_hat_post, // [2]
-                                Sigma_post, // [3]
-                                all_Sigma_post // [4]
-                                );
+      return 0;
 }

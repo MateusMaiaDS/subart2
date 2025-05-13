@@ -1,6 +1,8 @@
 #ifndef SUBART_MCMC_H
 #define SUBART_MCMC_H
 
+#include "subart_classes.h"
+
 void update_mu_and_predictions(Node* tree,
                               modelParam &data,
                               arma::cube &trees_fit_store,

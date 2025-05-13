@@ -1,5 +1,5 @@
-#include "subart_classes.h"
 #include <RcppArmadillo.h>
+#include "subart_classes.h"
 
 void Node::Stump(modelParam& data){
 

@@ -16,10 +16,6 @@ Node::Node(){
   n_leaf_test = 0;
   log_likelihood = 0.0;
   depth = 0;
-
-  left -> lower = 0.0;
-  left -> upper = 1.0;
-
 }
 
 bool Node::isLeft() {
@@ -32,7 +28,7 @@ Node::~Node() {
     delete left;
   }
 
-  if(!(left == NULL)){
+  if(!(right == NULL)){
     delete right;
   }
 }
