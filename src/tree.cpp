@@ -355,7 +355,7 @@ void prune(Node *tree,
   unsigned int number_nogs = nog_nodes.size();
 
   // If the tree os a rooot
-  if(tree->isRoot & tree->isLeaf){
+  if(tree->isRoot){
     p_node = t_nodes[0];
   } else {
     p_node = t_nodes[arma::randi(arma::distr_param(0,(number_nogs-1)))];
@@ -416,9 +416,13 @@ void prune(Node *tree,
     p_node->S_j = p_S_j;
     p_node->Gamma_j = p_Gamma_j;
     // p_node->deletingLeaves();
+    // delete p_node->left ;
+    // delete p_node->right;
+    p_node->left = p_node;
+    p_node->right = p_node;
     p_node->isLeaf = true;
-    delete p_node->left ;
-    delete p_node->right;
+
+
   } else {
 
     // Not need to modify anything all the nodes are already updated

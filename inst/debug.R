@@ -1,6 +1,6 @@
 source("R/other_functions.R")
 Rcpp::sourceCpp("src/subart.cpp")
-n <- 1000
+n <- 2000
 d <- 2
 set.seed(42)
 x_test <- x_train <- matrix(runif(n = n*d,min = -pi,max = pi),ncol=d)
@@ -262,3 +262,10 @@ end
 par(mfrow=c(2,1))
 plot(sqrt(subart_cpp[[3]][1,1,]), type = 'l',xlab = "MCMC", ylab = expression(sigma[1,1]))
 plot(sqrt(subart_cpp[[3]][2,2,]), type = 'l',xlab = "MCMC", ylab = expression(sigma[2,2]))
+
+par(mfrow=c(1,2))
+plot(x_train[,1],apply(subart_cpp[[1]],c(1,2),mean)[,1], xlab = "x.1", ylab = "y1")
+lines(sort(x_train[,1]), sin(sort(x_train[,1])), col = 'blue')
+plot(x_train[,2],apply(subart_cpp[[1]],c(1,2),mean)[,2], xlab = "x.2", ylab = "y2")
+lines(sort(x_train[,2]), cos(sort(x_train[,2])), col = 'blue')
+
