@@ -24,7 +24,7 @@ bool Node::isLeft() {
 }
 
 Node::~Node() {
-  if(!isLeaf) {
+  if(!isLeaf){
     delete left;
     delete right;
   }

@@ -1,15 +1,15 @@
 source("R/other_functions.R")
 Rcpp::sourceCpp("src/subart.cpp")
-n <- 2000
+n <- 1000
 d <- 2
 set.seed(42)
 x_test <- x_train <- matrix(runif(n = n*d,min = -pi,max = pi),ncol=d)
 y_mat <- matrix(rnorm(n = n*d),ncol=d)
-y_mat[,1] <- 2*sin(x_train[,1]) + rnorm(n = n,sd = 0.25)
-y_mat[,2] <- 2*cos(x_train[,2]) + rnorm(n = n,sd = 0.1)
+y_mat[,1] <- sin(x_train[,1]) + rnorm(n = n,sd = 0.25)
+y_mat[,2] <- cos(x_train[,2]) + rnorm(n = n,sd = 0.1)
 
 Sigma_init <- diag(ncol = d,nrow=d)
-n_tree <- 100
+n_tree <- 200
 node_min_size <- 5
 n_mcmc <- 2000
 n_burn <- 500

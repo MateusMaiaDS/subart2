@@ -3,6 +3,10 @@
 
 void Node::Stump(modelParam& data){
 
+  left = this;
+  right = this;
+  parent = this;
+
   n_leaf = data.n;
   n_leaf_test = data.n_test;
   train_index = data.init_train_index;
@@ -179,7 +183,7 @@ void grow(Node *tree,
 
   // If the tree os a rooot
   if(tree->isRoot & tree->isLeaf){
-    g_node = &tree[0];
+    g_node = tree;
   } else {
     g_node = t_nodes[arma::randi(arma::distr_param(0,(number_leaves-1)))];
   }
@@ -366,7 +370,9 @@ void prune(Node *tree,
   }
 
 
-
+  if(t_nodes.size()<5){
+    return;
+  }
   // Calculating the likelhood for the grown node
 
 
@@ -415,6 +421,7 @@ void prune(Node *tree,
     // Updating the g_node
     p_node->S_j = p_S_j;
     p_node->Gamma_j = p_Gamma_j;
+    // Rcpp::Rcout << "Number leaves: " << number_leaves << std::endl;
     // p_node->deletingLeaves();
     // delete p_node->left ;
     // delete p_node->right;
