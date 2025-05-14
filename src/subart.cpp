@@ -6,7 +6,7 @@
 
 
 // [[Rcpp::export]]
-int cppsubart(arma::mat x_train,
+Rcpp::List cppsubart(arma::mat x_train,
                    arma::mat y_mat,
                    arma::mat x_test,
                    arma::mat x_cut,
@@ -31,6 +31,7 @@ int cppsubart(arma::mat x_train,
 
       // Posterior counter
       unsigned int curr = 0;
+
 
       // Initializing the model definition
       modelParam data(x_train,
@@ -91,12 +92,16 @@ int cppsubart(arma::mat x_train,
         nodes->Stump(data);
       }
 
+
+
+
       // Creating variable to help to define which set of tree we are
       unsigned int curr_tree_counter = 0;
 
       // Matrix to store all predictors for all y
       arma::mat y_mat_hat(data.n,data.d,arma::fill::none);
       arma::mat y_mat_test_hat(data.n_test,data.d,arma::fill::none);
+
 
 
       // Declaring elements necessary to perform operations across the trees
@@ -131,12 +136,16 @@ int cppsubart(arma::mat x_train,
 
       // Creating a matrix to store the sum for each j
       arma::mat f_sum_trees(data.n,data.d,arma::fill::zeros);
-      arma::vec f_sum_excluding_tree_j(data.n,data.d,arma::fill::zeros);
+
+
+      arma::vec f_sum_j_excluding_tree_t(data.n,arma::fill::zeros);
 
 
 
       // Creating a matrix for f_sum for the test
       arma::mat f_sum_trees_test(data.n_test,data.d,arma::fill::zeros);
+
+
 
       for(unsigned int i = 0; i < data.n_mcmc; i ++){
 
@@ -155,7 +164,7 @@ int cppsubart(arma::mat x_train,
                 Sigma_j_mj[aux_j_counter] = data.Sigma.at(j,id_col);
                 Sigma_mj_j[aux_j_counter] = data.Sigma.at(j,id_col);
                 y_mj.unsafe_col(aux_j_counter) = data.y_mat.unsafe_col(id_col);
-                y_hat_mj.unsafe_col(aux_j_counter) = data.y_mat.unsafe_col(id_col);
+                y_hat_mj.unsafe_col(aux_j_counter) = f_sum_trees.unsafe_col(id_col);
                 extra_aux_j_counter = 0;
 
                 for(unsigned int extra_id_col = 0; extra_id_col < data.d; extra_id_col++){
@@ -206,8 +215,8 @@ int cppsubart(arma::mat x_train,
 
                 // Updating partial residuals
                 if(data.n_tree>1){
-                    f_sum_excluding_tree_j = f_sum_trees.unsafe_col(j) - trees_fit_store.slice(j).unsafe_col(t);
-                    partial_residuals = y_mat.unsafe_col(j) - f_sum_excluding_tree_j;
+                    f_sum_j_excluding_tree_t = f_sum_trees.unsafe_col(j) - trees_fit_store.slice(j).unsafe_col(t);
+                    partial_residuals = y_mat.unsafe_col(j) - f_sum_j_excluding_tree_t;
                 } else {
                     partial_residuals = y_mat.unsafe_col(j);
                 }
@@ -234,13 +243,18 @@ int cppsubart(arma::mat x_train,
                   grow(all_trees[curr_tree_counter],data,partial_residuals,partial_u,j);
 
                 }
+                // std::cout << "Tree fit one:" << trees_fit_store.at(1,t,j) << std::endl;
 
                 // Updating Mu and Predictions
                 update_mu_and_predictions(all_trees[curr_tree_counter],data,trees_fit_store,trees_fit_store_test,t,j);
 
+                // std::cout << "Obs one:" << f_sum_trees.at(1,j) << std::endl;
+                // std::cout << "Tree fit two:" << trees_fit_store.at(1,t,j) << std::endl;
 
                 // At the end of the iteration we will have
-                f_sum_trees.unsafe_col(j) = f_sum_excluding_tree_j + trees_fit_store.slice(j).unsafe_col(t); // REMEMBER TO UPDATE trees_fit_store (specifically the col(t)) BEFORE!
+                f_sum_trees.unsafe_col(j) = f_sum_j_excluding_tree_t + trees_fit_store.slice(j).unsafe_col(t); // REMEMBER TO UPDATE trees_fit_store (specifically the col(t)) BEFORE!
+
+                // std::cout << "Obs one (iter2): " << f_sum_trees.at(1,j) << std::endl;
 
                 // Only if fitting test
                 if(data.fit_test){
@@ -277,5 +291,9 @@ int cppsubart(arma::mat x_train,
 
       } // End of the MCMC iteration
 
-      return 0;
+
+      return Rcpp::List::create(y_train_hat_post, //[1]
+                                y_test_hat_post, //[2]
+                                Sigma_post, //[3]
+                                all_Sigma_post); // [4];
 }

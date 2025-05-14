@@ -63,18 +63,18 @@ modelParam::modelParam(arma::mat x_train_,
   xcut = x_cut_;
 
   n = x_train_.n_rows; // Converting uword to unsigned int; see if isn't a problme in the future
-  n_test = x_train_.n_rows; // Converting uword to unsigned int; see if isn't a problme in the future
+  n_test = x_test_.n_rows; // Converting uword to unsigned int; see if isn't a problme in the future
   d = y_mat.n_cols;
 
   init_train_index = arma::uvec(n);
   init_test_index = arma::uvec(n_test);
 
   for(unsigned int i = 0; i<n; i++){
-    init_train_index = i;
+    init_train_index[i] = i;
   }
 
   for(unsigned int i = 0; i<n_test; i++){
-    init_test_index = i;
+    init_test_index[i] = i;
   }
 
   n_tree = n_tree_;
@@ -104,8 +104,8 @@ modelParam::modelParam(arma::mat x_train_,
 
   for(arma::uword i = 0; i<d;i++){
     D.at(i,i) = 1.0;
-    sigma_mu_j = sigma_mu_.at(i);
-    sigma_mu_j_sq = sigma_mu_j*sigma_mu_j; // This operation can be done when constructing it
+    sigma_mu_j[i] = sigma_mu_[i];
+    sigma_mu_j_sq[i] = sigma_mu_j[i]*sigma_mu_j[i]; // This operation can be done when constructing it
   }
   // Grow acceptation ratio
   for(unsigned int i = 0; i<3;i++){
@@ -154,8 +154,8 @@ modelParam_uni::modelParam_uni(arma::mat x_train_,
   x_test = x_test_;
   xcut = x_cut_;
 
-  n = x_train_.n_elem; // Converting uword to unsigned int; see if isn't a problme in the future
-  n_test = x_train_.n_elem; // Converting uword to unsigned int; see if isn't a problme in the future
+  n = x_train_.n_rows; // Converting uword to unsigned int; see if isn't a problme in the future
+  n_test = x_test_.n_rows; // Converting uword to unsigned int; see if isn't a problme in the future
 
   d = y_mat.n_cols;
 

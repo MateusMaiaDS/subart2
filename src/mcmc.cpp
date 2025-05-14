@@ -18,6 +18,7 @@ void update_mu_and_predictions(Node* tree,
   get_leaves(tree,t_nodes);
 
   for(auto& leaf:t_nodes){
+
     leaf->mu = arma::randn(arma::distr_param((leaf->S_j)/(leaf->Gamma_j),sqrt(data.v_j/(leaf->Gamma_j)))) ;
 
     for(auto& id:leaf->train_index){
@@ -42,10 +43,10 @@ void update_a_j(modelParam &data){
 
   // Calculating shape and scale parameters
   for(unsigned int j = 0; j < data.d; j++){
-    double scale_j = 1/(data.A_j_vec(j)*data.A_j_vec(j))+data.nu*Precision(j,j);
+    double scale_j = 1/(data.A_j_vec.at(j)*data.A_j_vec.at(j))+data.nu*Precision.at(j,j);
     double a_j_vec_double_aux = arma::randg(arma::distr_param(shape_j,scale_j));
     data.a_j_vec(j) = 1/a_j_vec_double_aux;
-    data.S_0_wish(j,j) = (2*data.nu)/data.a_j_vec(j);
+    data.S_0_wish(j,j) = (2*data.nu)/data.a_j_vec.at(j);
   }
 
   return;
