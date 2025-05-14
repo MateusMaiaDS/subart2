@@ -24,15 +24,11 @@ bool Node::isLeft() {
 }
 
 Node::~Node() {
-  if(!(left == NULL)) {
+  if(!isLeaf) {
     delete left;
-  }
-
-  if(!(right == NULL)){
     delete right;
   }
 }
-
 
 // Initialising the model Param
 modelParam::modelParam(arma::mat x_train_,

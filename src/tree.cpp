@@ -293,7 +293,7 @@ void grow(Node *tree,
     log(1-data.alpha*pow(1+g_node->depth,-data.beta));
 
   // Getting the transition probability
-  double log_transition_prob_ratio = log((0.3)/(nog_nodes.size()+1)) - log(0.3/t_nodes.size()); // 0.3 and 0.3 are the prob of Prune and Grow, respectively
+  double log_transition_prob_ratio = log((0.3)/(nog_nodes.size()+1)) - log(0.3/t_nodes.size()); // 0.3 and 0.3 are the prob of Pru. and Grow, respectively
 
   // Calculating the acceptance ratio
   double acceptance = exp(new_tree_log_likelihood_ratio + log_tree_prior_ratio + log_transition_prob_ratio);
@@ -356,7 +356,7 @@ void prune(Node *tree,
 
   // If the tree os a rooot
   if(tree->isRoot & tree->isLeaf){
-    p_node = &tree[0];
+    p_node = t_nodes[0];
   } else {
     p_node = t_nodes[arma::randi(arma::distr_param(0,(number_nogs-1)))];
   }
@@ -413,10 +413,12 @@ void prune(Node *tree,
   if(arma::randu(arma::distr_param(0.0,1.0)) < acceptance){
 
     // Updating the g_node
-    p_node->deletingLeaves();
     p_node->S_j = p_S_j;
     p_node->Gamma_j = p_Gamma_j;
-
+    // p_node->deletingLeaves();
+    p_node->isLeaf = true;
+    delete p_node->left ;
+    delete p_node->right;
   } else {
 
     // Not need to modify anything all the nodes are already updated
