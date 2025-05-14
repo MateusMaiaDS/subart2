@@ -360,7 +360,7 @@ void prune(Node *tree,
 
   // If the tree os a rooot
   if(tree->isRoot){
-    p_node = t_nodes[0];
+    p_node = tree;
   } else {
     p_node = t_nodes[arma::randi(arma::distr_param(0,(number_nogs-1)))];
   }
@@ -370,12 +370,7 @@ void prune(Node *tree,
   }
 
 
-  if(t_nodes.size()<5){
-    return;
-  }
-  // Calculating the likelhood for the grown node
-
-
+  // Calculating the likelhood for the node selected to be grown
   double r_sum = 0.0;
   double u_sum = 0.0;
 
