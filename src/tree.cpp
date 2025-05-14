@@ -416,17 +416,8 @@ void prune(Node *tree,
     // Updating the g_node
     p_node->S_j = p_S_j;
     p_node->Gamma_j = p_Gamma_j;
-    // Rcpp::Rcout << "Number leaves: " << number_leaves << std::endl;
+    p_node->deletingLeaves();
 
-    // HAVING A PROBLEM OF MEMORY LEAK HERE
-    // p_node->deletingLeaves();
-    // delete p_node->left ;
-    // delete p_node->right;
-
-    // DOING LIKE THIS WORKS BUT I'LL HAVE A MEMORY LEAK FOR NOT DELETING THE NEW NODE()
-    p_node->left = p_node;
-    p_node->right = p_node;
-    p_node->isLeaf = true;
 
 
   } else {
