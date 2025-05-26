@@ -135,7 +135,6 @@ Rcpp::List cppsubart(arma::mat x_train,
       arma::vec f_sum_j_excluding_tree_t(data.n,arma::fill::zeros);
 
 
-
       // Creating a matrix for f_sum for the test
       arma::mat f_sum_trees_test(data.n_test,data.d,arma::fill::zeros);
 

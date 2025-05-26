@@ -205,7 +205,7 @@ void grow(Node *tree,
   double lower_candidate;
   double upper_candidate;
 
-  // Obtaining the limits
+  // // Obtaining the limits
   g_node->getLimits(var_split_candidate,
                     lower_candidate,
                     upper_candidate);
