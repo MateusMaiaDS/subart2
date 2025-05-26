@@ -20,11 +20,7 @@ Rcpp::List cppsubart(arma::mat x_train,
                    double alpha, double beta, double nu,
                    arma::mat S_0_wish,
                    arma::vec A_j_vec,
-                   bool update_Sigma,
-                   bool var_selection_bool,
-                   bool sv_bool,
-                   bool hier_prior_bool,
-                   arma::mat sv_matrix,
+                   bool hier_prior_sigma,
                    arma::uvec categorical_indicators,
                    bool fit_test){
 
@@ -49,8 +45,6 @@ Rcpp::List cppsubart(arma::mat x_train,
                       A_j_vec,
                       n_mcmc,
                       n_burn,
-                      sv_bool,
-                      sv_matrix,
                       categorical_indicators,
                       fit_test);
 
@@ -231,10 +225,10 @@ Rcpp::List cppsubart(arma::mat x_train,
                 }
 
                 // Selecting each verb -- Here I considering the probability of Grow:0.3, Prune: 0.3, and Change = 0.4 -- May need to reavulate those
-                if(verb < 0.3) {
+                if(verb < 0.5) {
                   data.move_proposal.at(0)++;
                   grow(all_trees[curr_tree_counter],data,partial_residuals,partial_u,j);
-                } else if((verb >= 0.3) & (verb < 0.6)){
+                } else if((verb >= 0.5) & (verb < 1.0)){
                   data.move_proposal.at(1)++;
                   prune(all_trees[curr_tree_counter],data,partial_residuals,partial_u,j);
                 } else {
@@ -267,7 +261,10 @@ Rcpp::List cppsubart(arma::mat x_train,
 
 
         // Updating the covariance matrix
-        update_a_j(data);
+        if(hier_prior_sigma){
+            update_a_j(data);
+        }
+
         updateSigma(f_sum_trees,data);
 
 

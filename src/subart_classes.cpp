@@ -46,8 +46,6 @@ modelParam::modelParam(arma::mat x_train_,
                        arma::vec A_j_vec_,
                        double n_mcmc_,
                        double n_burn_,
-                       bool sv_bool_,
-                       arma::mat sv_matrix_,
                        arma::uvec categorical_indicators_,
                        bool fit_test_){
 
@@ -86,9 +84,6 @@ modelParam::modelParam(arma::mat x_train_,
   a_j_vec = arma::vec(d);
   n_mcmc = n_mcmc_;
   n_burn = n_burn_;
-
-  sv_bool = sv_bool_;
-  sv_matrix = sv_matrix_;
 
   sigma_mu_j = arma::vec(d,arma::fill::none);
   sigma_mu_j_sq = arma::vec(d,arma::fill::none);
@@ -139,8 +134,6 @@ modelParam_uni::modelParam_uni(arma::mat x_train_,
                        arma::vec A_j_vec_,
                        double n_mcmc_,
                        double n_burn_,
-                       bool sv_bool_,
-                       arma::mat sv_matrix_,
                        arma::uvec categorical_indicators_){
 
 
@@ -169,8 +162,6 @@ modelParam_uni::modelParam_uni(arma::mat x_train_,
   n_mcmc = n_mcmc_;
   n_burn = n_burn_;
 
-  sv_bool = sv_bool_;
-  sv_matrix = sv_matrix_;
 
   // Generating the elements for the correlation matrix
   R = Sigma_;

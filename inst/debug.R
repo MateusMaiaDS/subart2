@@ -25,7 +25,6 @@ numcut <- 100
 
 update_Sigma <- TRUE
 var_selection_bool <- TRUE
-sv_bool <- TRUE
 hier_prior_bool <- TRUE
 
 # Handling error heading
@@ -229,7 +228,6 @@ if(class_model){
 }
 
 A_j_vec <- A_j
-sv_matrix <- matrix(1,rep(ncol(y_mat)))
 categorical_indicators <- rep(1,ncol(y_mat))
 init <- Sys.time()
 
@@ -249,11 +247,7 @@ subart_cpp <- cppsubart(x_train,
           nu,
           S_0_wish,
           A_j_vec,
-          update_Sigma,
-          var_selection_bool,
-          sv_bool,
           hier_prior_bool,
-          sv_matrix,
           categorical_indicators,
           FALSE)
 end <- Sys.time()-init

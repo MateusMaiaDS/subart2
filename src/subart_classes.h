@@ -37,9 +37,6 @@ struct modelParam {
   arma::mat R;
   arma::mat D;
 
-  // Specific variables for each tree
-  bool sv_bool;
-  arma::mat sv_matrix;
 
   double nu;
   unsigned int node_min_size;
@@ -80,8 +77,6 @@ struct modelParam {
              arma::vec A_j_vec_,
              double n_mcmc_,
              double n_burn_,
-             bool sv_bool_,
-             arma::mat sv_matrix_,
              arma::uvec categorical_indicators_,
              bool fit_test_);
 
@@ -115,10 +110,6 @@ struct modelParam_uni {
   arma::mat W;
   arma::mat R;
   arma::mat D;
-
-  // Specific variables for each tree
-  bool sv_bool;
-  arma::mat sv_matrix;
 
   double nu;
   int node_min_size;
@@ -156,8 +147,6 @@ struct modelParam_uni {
                  arma::vec A_j_vec_,
                  double n_mcmc_,
                  double n_burn_,
-                 bool sv_bool_,
-                 arma::mat sv_matrix_,
                  arma::uvec categorical_indicators_);
 
 };
