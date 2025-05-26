@@ -10,6 +10,7 @@ data <- sim_mvn_friedman1(n = n,p = 10,mvn_dim = d,Sigma = diag(nrow = 2))
 x_train <- data$x
 x_test <- x_train
 y_mat <- data$y
+y_mat <- apply(y_mat,2,scale)
 
 # x_test <- x_train <- matrix(runif(n = n*d,min = -pi,max = pi),ncol=d)
 # y_mat <- matrix(rnorm(n = n*d),ncol=d)
@@ -88,12 +89,21 @@ plot(dbart_mod$yhat.train.mean,subart_mod$y_hat_mean[,1],xlab = "dbart_pred",yla
 plot(dbart_mod_two$yhat.train.mean,y_mat[,2],xlab = "dbart_pred",ylab = "y_obs")
 plot(dbart_mod_two$yhat.train.mean,subart_mod$y_hat_mean[,2],xlab = "dbart_pred",ylab = "subart")
 
+
+bart_mod <- BART::gbart(x.train = x_train,y.train = y_mat[,1])
+plot(bart_mod$yhat.train.mean,y_mat[,1])
+plot(bart_mod$yhat.train.mean,
+     dbart_mod$yhat.train.mean)
+
+plot(bart_mod$yhat.train.mean,
+     subart_mod$y_hat_mean[,1])
+
 # plot(x_train$X1,dbart_mod$yhat.train.mean,main = "dbart")
 # plot(x_train$X1,subart_mod$y_hat_mean[,1],main = "subart")
 
 # plot(x_train$X2,dbart_mod_two$yhat.train.mean,main = "dbart")
 # plot(x_train$X2,subart_mod$y_hat_mean[,2],main = "subart")
 
-par(mfrow=c(1,1))
-plot(dbart_mod$sigma, type = 'l')
-lines(sqrt(subart_mod$Sigma_post[1,1,]), type = 'l', col = 'blue')
+# par(mfrow=c(1,1))
+# plot(dbart_mod$sigma, type = 'l')
+# lines(sqrt(subart_mod$Sigma_post[1,1,]), type = 'l', col = 'blue')

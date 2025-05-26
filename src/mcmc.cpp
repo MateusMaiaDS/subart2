@@ -58,13 +58,13 @@ void updateSigma(arma::mat &f_sum_trees,
                  modelParam &data){
 
   arma::mat S(data.d, data.d, arma::fill::zeros);
-  // for (arma::uword i = 0; i < data.n; ++i) {
-  //   arma::rowvec r = f_sum_trees.row(i) - data.y_mat.row(i);
-  //   S += r.t() * r;
-  // }
+  for (arma::uword i = 0; i < data.n; ++i) {
+    arma::rowvec r = f_sum_trees.row(i) - data.y_mat.row(i);
+    S += r.t() * r;
+  }
 
-  arma::mat residuals_mat = f_sum_trees-data.y_mat;
-  S = residuals_mat.t()*residuals_mat;
+  // arma::mat residuals_mat = f_sum_trees-data.y_mat;
+  // S = residuals_mat.t()*residuals_mat;
 
   // Updating sigma
   data.Sigma = arma::iwishrnd((data.S_0_wish+S),data.nu + data.d - 1 + data.n);
