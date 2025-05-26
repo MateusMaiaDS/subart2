@@ -60,6 +60,8 @@ modelParam::modelParam(arma::mat x_train_,
   n_test = x_test_.n_rows; // Converting uword to unsigned int; see if isn't a problme in the future
   d = y_mat.n_cols;
 
+  p = x_train.n_cols;
+
   init_train_index = arma::uvec(n);
   init_test_index = arma::uvec(n_test);
 
@@ -147,6 +149,7 @@ modelParam_uni::modelParam_uni(arma::mat x_train_,
   n_test = x_test_.n_rows; // Converting uword to unsigned int; see if isn't a problme in the future
 
   d = y_mat.n_cols;
+  p = x_train.n_cols;
 
   n_tree = n_tree_;
   node_min_size = node_min_size_;

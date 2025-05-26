@@ -19,6 +19,7 @@ struct modelParam {
   unsigned int n;
   unsigned int n_test;
   unsigned int d;
+  unsigned int p;
 
   arma::uvec init_train_index;
   arma::uvec init_test_index;
@@ -97,6 +98,8 @@ struct modelParam_uni {
   arma::uvec init_test_index;
 
   unsigned int d;
+  unsigned int p;
+
   // BART prior param specification
   unsigned int n_tree;
   unsigned int d_var; // Dimension of variables in my base

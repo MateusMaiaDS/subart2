@@ -251,8 +251,9 @@ Rcpp::List cppsubart(arma::mat x_train,
 
                 // Only if fitting test
                 if(data.fit_test){
-                  f_sum_trees_test.unsafe_col(j) = f_sum_trees_test.unsafe_col(t) + trees_fit_store_test.slice(j).unsafe_col(t);
+                  f_sum_trees_test.unsafe_col(j) = f_sum_trees_test.unsafe_col(j) + trees_fit_store_test.slice(j).unsafe_col(t);
                 }
+
                 // Add latter : add the variable selection step. I.e: which variables are used and which are not
 
             } // End of iteration in the trees
@@ -276,7 +277,7 @@ Rcpp::List cppsubart(arma::mat x_train,
           y_train_hat_post.slice(curr) = f_sum_trees;
 
           if(data.fit_test){
-              y_test_hat_post.slice(curr) = y_mat_test_hat;
+              y_test_hat_post.slice(curr) = f_sum_trees_test;
           }
 
           Sigma_post.slice(curr) = data.Sigma;

@@ -199,7 +199,7 @@ void grow(Node *tree,
 
   // Selecting a splitting variable and a split rule
   //(explore the logic of selecting a good candidate for the split rule)
-  unsigned int var_split_candidate = arma::randi<arma::uword>(arma::distr_param(0, data.d - 1));
+  unsigned int var_split_candidate = arma::randi<arma::uword>(arma::distr_param(0, data.p - 1));
 
 
   double lower_candidate;
@@ -259,6 +259,7 @@ void grow(Node *tree,
     }
 
   }
+
 
   if(left_id_counter==0 || right_id_counter==0) {
     return; // Exit the grow move as the new grow is not valid.
@@ -328,6 +329,40 @@ void grow(Node *tree,
     // g_node->right->test_index = right_id_test; // TODO: implement the test index here
     g_node->right->S_j = S_j_right;
     g_node->right->Gamma_j = Gamma_j_right;
+
+
+    if(data.fit_test){
+
+        // Assigned left and right for the current train index
+        arma::uvec left_id_test = g_node->test_index;
+        arma::uvec right_id_test  = g_node->test_index;
+        unsigned int left_id_counter_test = 0;
+        unsigned int right_id_counter_test = 0;
+
+        for(auto& id_test:g_node->test_index){
+
+            // Here I will update the r_sum and u_sum to avoid to go over through the same iterations when doing left->updateResiduals()
+            if(data.x_test.at(id_test,var_split_candidate) <= var_split_rule_candidate ){
+
+              left_id_test[left_id_counter_test] = id_test;
+              left_id_counter_test++;
+            } else {
+
+              right_id_test[right_id_counter_test] = id_test;
+              right_id_counter_test++;
+
+            }
+
+        }
+
+        left_id_test.resize(left_id_counter_test); // Maybe in a future think a way of using arma::set_size? which is much faster
+        right_id_test.resize(right_id_counter_test); // Maybe in the future thinkk in a way of us arma::set_size? which is much faster
+
+        g_node->left->test_index = left_id_test;
+        g_node->right->test_index = right_id_test;
+
+    }
+
 
   } else {
 

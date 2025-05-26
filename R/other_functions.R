@@ -398,7 +398,7 @@ partial_dependance_plot <- function(variable_index,
 
   pd_test_matrix <- do.call(rbind,pd_test_replications)
   pd_index <- split(1:nrow(pd_test_matrix),cut(1:nrow(pd_test_matrix),breaks = length(x_points),labels = FALSE))
-  subart_ppd <- subart::subart(x_train = x_train,
+  subart_ppd <- subart2::subart(x_train = x_train,
                                y_mat = y_train,
                                x_test = pd_test_matrix,...)
 

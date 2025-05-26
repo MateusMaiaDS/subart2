@@ -6,11 +6,12 @@ n <- 250
 d <- 2
 
 # # Simulate from a function
-data <- sim_mvn_friedman1(n = n,p = 10,mvn_dim = d,Sigma = diag(nrow = 2))
+data <- sim_mvn_friedman1(n = n,
+                          p = 5,mvn_dim = d,Sigma = diag(nrow = 2))
 x_train <- data$x
 x_test <- x_train
 y_mat <- data$y
-y_mat <- apply(y_mat,2,scale)
+# y_mat <- apply(y_mat,2,scale)
 
 # x_test <- x_train <- matrix(runif(n = n*d,min = -pi,max = pi),ncol=d)
 # y_mat <- matrix(rnorm(n = n*d),ncol=d)
@@ -21,7 +22,7 @@ y_mat <- apply(y_mat,2,scale)
 # y_mat[,1] <- y_mat[,1] + err[1,1]
 # y_mat[,2] <- y_mat[,2] + err[2,2]
 
-n_tree = 200
+n_tree = 100
 node_min_size = 2
 n_mcmc = 2000
 n_burn = 1000
@@ -33,12 +34,14 @@ kappa = 2
 numcut = 100L # Defining the grid of split rules
 usequants = TRUE
 m = 20 # Degrees of freed for the classification setting.
-hier_prior_sigma <- TRUE
+hier_prior_sigma <- FALSE
 diagnostic = TRUE
 
 
 x_train <- data.frame(x_train)
-subart_mod <- subart2::subart(x_train = x_train,y_mat = y_mat,x_test = NULL,
+subart_mod <- subart2::subart(x_train = x_train,
+                              y_mat = y_mat,
+                              x_test = x_train,
                               n_tree = n_tree,
                               n_mcmc = n_mcmc,
                               n_burn = n_burn)
@@ -73,11 +76,13 @@ plot(sqrt(subart_mod$Sigma_post[1,1,]), type = "l",xlab = "mcmc", ylab = express
 plot(sqrt(subart_mod$Sigma_post[2,2,]), type = "l",xlab = "mcmc", ylab = expression(sigma[11]))
 
 
-dbart_mod <- dbarts::bart(x.train = x_train,y.train = y_mat[,1],proposalprobs = c("birth_death" = 0.99,
+dbart_mod <- dbarts::bart(x.train = x_train,ntree = n_tree,
+                          y.train = y_mat[,1],proposalprobs = c("birth_death" = 0.99,
                                                                                   "change" = 0.01,
                                                                                   "swap" = 0.0,
                                                                                   "birth" = 0.5))
-dbart_mod_two <- dbarts::bart(x.train = x_train,y.train = y_mat[,2],proposalprobs = c("birth_death" = 0.99,
+dbart_mod_two <- dbarts::bart(x.train = x_train,ntree = n_tree,
+                              y.train = y_mat[,2],proposalprobs = c("birth_death" = 0.99,
                                                                                       "change" = 0.01,
                                                                                       "swap" = 0.0,
                                                                                       "birth" = 0.5))
@@ -90,7 +95,7 @@ plot(dbart_mod_two$yhat.train.mean,y_mat[,2],xlab = "dbart_pred",ylab = "y_obs")
 plot(dbart_mod_two$yhat.train.mean,subart_mod$y_hat_mean[,2],xlab = "dbart_pred",ylab = "subart")
 
 
-bart_mod <- BART::gbart(x.train = x_train,y.train = y_mat[,1])
+bart_mod <- BART::gbart(x.train = x_train,y.train = y_mat[,1],ntree = n_tree)
 plot(bart_mod$yhat.train.mean,y_mat[,1])
 plot(bart_mod$yhat.train.mean,
      dbart_mod$yhat.train.mean)
@@ -107,3 +112,6 @@ plot(bart_mod$yhat.train.mean,
 # par(mfrow=c(1,1))
 # plot(dbart_mod$sigma, type = 'l')
 # lines(sqrt(subart_mod$Sigma_post[1,1,]), type = 'l', col = 'blue')
+
+
+partial_dependance_plot(variable_index = 3,n_points = 10,use_quantiles = TRUE,x_train = x_train,y_train = y_mat)

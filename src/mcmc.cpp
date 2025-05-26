@@ -26,9 +26,11 @@ void update_mu_and_predictions(Node* tree,
     }
 
     // // Here replicate the same for the test
-    // for(auto& id_test:leaf->test_index){
-    //   tree_fit_store_test.at(id,t,j) = leaf->mu;
-    // }
+    if(data.fit_test){
+      for(auto& id_test:leaf->test_index){
+        trees_fit_store_test.at(id_test,t,j) = leaf->mu;
+      }
+    }
   }
 
 
