@@ -39,12 +39,12 @@ diagnostic = TRUE
 
 
 x_train <- data.frame(x_train)
-subart_mod <- subart2::subart(x_train = x_train,
-                              y_mat = y_mat,
-                              x_test = x_train,
-                              n_tree = n_tree,
-                              n_mcmc = n_mcmc,
-                              n_burn = n_burn)
+# subart_mod <- subart2::subart(x_train = x_train,
+#                               y_mat = y_mat,
+#                               x_test = x_train,
+#                               n_tree = n_tree,
+#                               n_mcmc = n_mcmc,
+#                               n_burn = n_burn)
 
 par(mfrow=c(2,1))
 

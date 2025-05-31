@@ -1,6 +1,6 @@
 source("R/other_functions.R")
 Rcpp::sourceCpp("src/subart.cpp")
-n <- 1000
+n <- 250
 d <- 2
 set.seed(42)
 x_test <- x_train <- matrix(runif(n = n*d,min = -pi,max = pi),ncol=d)
@@ -9,7 +9,7 @@ y_mat[,1] <- sin(x_train[,1]) + rnorm(n = n,sd = 0.25)
 y_mat[,2] <- cos(x_train[,2]) + rnorm(n = n,sd = 0.1)
 
 Sigma_init <- diag(ncol = d,nrow=d)
-n_tree <- 200
+n_tree <- 100
 node_min_size <- 5
 n_mcmc <- 2000
 n_burn <- 500
@@ -233,7 +233,7 @@ init <- Sys.time()
 
 subart_cpp <- cppsubart(x_train,
           y_mat,
-          x_test,
+          x_test = x_train[1:2,],
           x_train,
           n_tree,
           node_min_size,
