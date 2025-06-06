@@ -72,3 +72,35 @@ void updateSigma(arma::mat &f_sum_trees,
   data.Sigma = arma::iwishrnd((data.S_0_wish+S),data.nu + data.d - 1 + data.n);
 
 }
+
+// Creating the function for the updating whenn y_mat_missing
+void update_y_mat_missing(modelParam & data,
+                          arma::mat &y_mat_hat,
+                          arma::mat &na_indicators,
+                          int ii){
+
+    if(data.d==1) {
+
+    } else if(data.d == 2) {
+
+      unsigned int ij;
+      // Once there are only two outcomes, if ii=1, the selected column should be the other, such as
+      if(ii==0) {
+         ij = 1;
+      } else if(ii==1) {
+         ij = 0;
+      }
+
+      arma::mat y_mat_mj = data.y_mat.col(ij);
+      arma::mat y_hat_mj = y_mat_hat.col(ij);
+
+      arma::rowvec Sigma_j_mj = data.Sigma.row(ij);
+      arma::colvec Sigma_mj_j = data.Sigma.col(ij);
+
+      double Sigma_mj_mj = data.Sigma.at(ij,ij);
+
+
+    }
+
+
+}
