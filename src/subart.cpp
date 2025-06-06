@@ -140,13 +140,15 @@ Rcpp::List cppsubart(arma::mat x_train,
 
 
       // Initializing the messages:
-      printf("\nRunning BART with numeric y\n\n");
+      printf("\nRunning subart with numeric y\n\n");
       printf("\nParameters: \n");
       printf("\tnumber of trees: %u \n", data.n_tree);
       printf("\talpha and beta for tree prior: %f %f\n", data.alpha, data.beta);
       printf("\tnumber of responses: %u \n", data.d);
       printf("\tnumber of training observations: %u\n", data.n);
-      printf("\tnumber of test observations : %u\n", data.n_test);
+      if(fit_test){
+        printf("\tnumber of test observations : %u\n", data.n_test);
+      }
       printf("\tnumber of explanatory variables: %u \n", data.p);
       printf("\nMCMC \n");
       printf("\tnumber of mcmc iter: %u \n", data.n_mcmc);
