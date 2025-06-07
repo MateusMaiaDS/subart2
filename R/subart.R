@@ -405,16 +405,13 @@ subart <- function(x_train,
 
       if(any(is.na(y_mat_scale))){
 
-        stop("Not available yet.")
-
-
         number_na <- apply(y_mat_scale,2,function(x){sum(is.na(x),na.rm = TRUE)})
         na_indicators <- ifelse(is.na(y_mat_scale),1,0)
         y_mat_scale[is.na(y_mat_scale)] <- 0
 
         na_boolean <- TRUE
 
-        bart_obj <- cppbart_missing(x_train_scale,
+        bart_obj <- cppsubart_missing(x_train_scale,
                                     y_mat_scale,
                                     number_na,
                                     na_indicators,
@@ -430,10 +427,9 @@ subart <- function(x_train,
                                     alpha,beta,nu,
                                     S_0_wish,
                                     A_j,
-                                    update_Sigma,
-                                    varimportance,
                                     hier_prior_sigma,
-                                    categorical_indicators)
+                                    categorical_indicators,
+                                    fit_test)
 
       } else {
         na_boolean <- FALSE
