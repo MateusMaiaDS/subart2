@@ -466,7 +466,7 @@ subart <- function(x_train,
   y_train_post <- bart_obj[[1]]
   y_test_post <- bart_obj[[2]]
   y_mat_post <-if(na_boolean){
-    bart_obj[[1]]
+    bart_obj[[5]]
   } else {
     NULL
   }

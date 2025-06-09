@@ -229,9 +229,9 @@ Rcpp::List cppsubart(arma::mat x_train,
                 // Updating partial residuals
                 if(data.n_tree>1){
                     f_sum_j_excluding_tree_t = f_sum_trees.unsafe_col(j) - trees_fit_store.slice(j).unsafe_col(t);
-                    partial_residuals = y_mat.unsafe_col(j) - f_sum_j_excluding_tree_t;
+                    partial_residuals = data.y_mat.unsafe_col(j) - f_sum_j_excluding_tree_t;
                 } else {
-                    partial_residuals = y_mat.unsafe_col(j);
+                    partial_residuals = data.y_mat.unsafe_col(j);
                 }
 
 

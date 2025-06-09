@@ -60,6 +60,8 @@ Rcpp::List cppsubart_missing(arma::mat x_train,
   // Creating the posterior elements
   arma::cube y_train_hat_post(data.n,data.d,n_post,arma::fill::none);
   arma::cube y_test_hat_post(data.n_test,data.d,n_post,arma::fill::none);
+  arma::cube y_mat_post(data.n,data.d,n_post,arma::fill::none);
+
   arma::cube Sigma_post(data.d,data.d,n_post,arma::fill::none);
   arma::cube all_Sigma_post(data.d,data.d,n_mcmc,arma::fill::none);
 
@@ -97,8 +99,6 @@ Rcpp::List cppsubart_missing(arma::mat x_train,
   // Matrix to store all predictors for all y
   arma::mat y_mat_hat(data.n,data.d,arma::fill::none);
   arma::mat y_mat_test_hat(data.n_test,data.d,arma::fill::none);
-
-
 
   // Declaring elements necessary to perform operations across the trees
   arma::mat prediction_train_sum(data.n,data.d,arma::fill::none);
@@ -232,9 +232,9 @@ Rcpp::List cppsubart_missing(arma::mat x_train,
         // Updating partial residuals
         if(data.n_tree>1){
           f_sum_j_excluding_tree_t = f_sum_trees.unsafe_col(j) - trees_fit_store.slice(j).unsafe_col(t);
-          partial_residuals = y_mat.unsafe_col(j) - f_sum_j_excluding_tree_t;
+          partial_residuals = data.y_mat.unsafe_col(j) - f_sum_j_excluding_tree_t;
         } else {
-          partial_residuals = y_mat.unsafe_col(j);
+          partial_residuals = data.y_mat.unsafe_col(j);
         }
 
 
@@ -312,7 +312,7 @@ Rcpp::List cppsubart_missing(arma::mat x_train,
     if(i >= n_burn){
 
       y_train_hat_post.slice(curr) = f_sum_trees;
-
+      y_mat_post.slice(curr) = data.y_mat;
       if(data.fit_test){
         y_test_hat_post.slice(curr) = f_sum_trees_test;
       }
@@ -331,5 +331,6 @@ Rcpp::List cppsubart_missing(arma::mat x_train,
   return Rcpp::List::create(y_train_hat_post, //[1]
                             y_test_hat_post, //[2]
                             Sigma_post, //[3]
-                            all_Sigma_post); // [4];
+                            all_Sigma_post, //[4]
+                            y_mat_post); // [5];
 }

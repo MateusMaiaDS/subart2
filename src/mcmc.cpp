@@ -75,7 +75,7 @@ void updateSigma(arma::mat &f_sum_trees,
 
 // Creating the function for the updating whenn y_mat_missing
 void update_y_mat_missing(modelParam & data,
-                          arma::mat &y_mat_hat,
+                          arma::mat &f_sum_trees,
                           arma::mat &na_indicators,
                           unsigned int ii){
 
@@ -99,15 +99,15 @@ void update_y_mat_missing(modelParam & data,
       double Sigma_mj_j = data.Sigma.at(ij,ii);
       double Sigma_mj_mj = data.Sigma.at(ij,ij);
 
-      double scale_mean_aux = Sigma_j_mj/Sigma_mj_mj;
+      double scale_mean_aux = Sigma_j_mj*Sigma_mj_mj;
 
       double variance_aux = data.Sigma.at(ii,ii) - scale_mean_aux*Sigma_mj_j;
       double mean_y_ii;
 
       for(unsigned int na_id = 0; na_id < na_indicators.n_rows;na_id++){
         if(na_indicators(na_id,ii)==1){
-          mean_y_ii  = y_mat_hat.at(na_id,ii) + scale_mean_aux*(data.y_mat.at(na_id,ij)-y_mat_hat(na_id,ij));
-          data.y_mat(na_id,ii) = arma::randn(arma::distr_param(mean_y_ii,sqrt(variance_aux)));
+           mean_y_ii  = f_sum_trees.at(na_id,ii) + scale_mean_aux*(data.y_mat.at(na_id,ij)-f_sum_trees(na_id,ij));
+           data.y_mat(na_id,ii) = arma::randn(arma::distr_param(mean_y_ii,sqrt(variance_aux)));
         }
       }
 
@@ -145,7 +145,7 @@ void update_y_mat_missing(modelParam & data,
             Sigma_j_mj[aux_j_counter] = data.Sigma.at(j,id_col);
             Sigma_mj_j[aux_j_counter] = data.Sigma.at(j,id_col);
             y_mj.unsafe_col(aux_j_counter) = data.y_mat.unsafe_col(id_col);
-            y_hat_mj.unsafe_col(aux_j_counter) = y_mat_hat.unsafe_col(id_col);
+            y_hat_mj.unsafe_col(aux_j_counter) = f_sum_trees.unsafe_col(id_col);
             extra_aux_j_counter = 0;
 
             for(unsigned int extra_id_col = 0; extra_id_col < data.d; extra_id_col++){
@@ -175,7 +175,7 @@ void update_y_mat_missing(modelParam & data,
 
       for(unsigned int na_id = 0; na_id < na_indicators.n_rows;na_id++){
         if(na_indicators(na_id,ii)==1){
-          mean_y_ii = y_mat_hat.at(na_id,ii) + arma::as_scalar(scale_mean_aux*(y_mj_t.unsafe_col(na_id)-y_hat_mj_t.unsafe_col(na_id)));
+          mean_y_ii = f_sum_trees.at(na_id,ii) + arma::as_scalar(scale_mean_aux*(y_mj_t.unsafe_col(na_id)-y_hat_mj_t.unsafe_col(na_id)));
           // Rcpp::Rcout << " Printing the "
           data.y_mat.at(na_id,ii) = arma::randn(arma::distr_param(mean_y_ii,sqrt(variance_aux)));
         }
