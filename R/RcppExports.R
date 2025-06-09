@@ -5,3 +5,7 @@ cppsubart <- function(x_train, y_mat, x_test, x_cut, n_tree, node_min_size, n_mc
     .Call('_subart2_cppsubart', PACKAGE = 'subart2', x_train, y_mat, x_test, x_cut, n_tree, node_min_size, n_mcmc, n_burn, Sigma_init, mu_init, sigma_mu, alpha, beta, nu, S_0_wish, A_j_vec, hier_prior_sigma, categorical_indicators, fit_test)
 }
 
+cppsubart_missing <- function(x_train, y_mat, n_missing, na_indicators, x_test, x_cut, n_tree, node_min_size, n_mcmc, n_burn, Sigma_init, mu_init, sigma_mu, alpha, beta, nu, S_0_wish, A_j_vec, hier_prior_sigma, categorical_indicators, fit_test) {
+    .Call('_subart2_cppsubart_missing', PACKAGE = 'subart2', x_train, y_mat, n_missing, na_indicators, x_test, x_cut, n_tree, node_min_size, n_mcmc, n_burn, Sigma_init, mu_init, sigma_mu, alpha, beta, nu, S_0_wish, A_j_vec, hier_prior_sigma, categorical_indicators, fit_test)
+}
+

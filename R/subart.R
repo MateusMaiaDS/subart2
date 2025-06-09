@@ -411,6 +411,7 @@ subart <- function(x_train,
 
         na_boolean <- TRUE
 
+        print(na_indicators)
         bart_obj <- cppsubart_missing(x_train_scale,
                                     y_mat_scale,
                                     number_na,
@@ -465,7 +466,7 @@ subart <- function(x_train,
   y_train_post <- bart_obj[[1]]
   y_test_post <- bart_obj[[2]]
   y_mat_post <-if(na_boolean){
-    bart_obj[[8]]
+    bart_obj[[1]]
   } else {
     NULL
   }

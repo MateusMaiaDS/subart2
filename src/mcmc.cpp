@@ -77,7 +77,7 @@ void updateSigma(arma::mat &f_sum_trees,
 void update_y_mat_missing(modelParam & data,
                           arma::mat &y_mat_hat,
                           arma::mat &na_indicators,
-                          int ii){
+                          unsigned int ii){
 
     if(data.d==1) {
 
@@ -104,10 +104,10 @@ void update_y_mat_missing(modelParam & data,
       double variance_aux = data.Sigma.at(ii,ii) - scale_mean_aux*Sigma_mj_j;
       double mean_y_ii;
 
-      for(int na_id = 0; na_id < na_indicators.n_rows;na_id++){
-        if(na_id==1){
+      for(unsigned int na_id = 0; na_id < na_indicators.n_rows;na_id++){
+        if(na_indicators(na_id,ii)==1){
           mean_y_ii  = y_mat_hat.at(na_id,ii) + scale_mean_aux*(data.y_mat.at(na_id,ij)-y_mat_hat(na_id,ij));
-          data.y_mat.at(na_id,ii) = arma::randn(arma::distr_param(mean_y_ii,sqrt(variance_aux)));
+          data.y_mat(na_id,ii) = arma::randn(arma::distr_param(mean_y_ii,sqrt(variance_aux)));
         }
       }
 
@@ -131,14 +131,12 @@ void update_y_mat_missing(modelParam & data,
 
 
       // Declaring Sigmas and auxiliarys int/doubles
-      double Sigma_j_j;
       unsigned int aux_j_counter = 0;
       unsigned int extra_aux_j_counter = 0;
 
       for(unsigned int j = 0; j < data.d;j++){
 
         // Popoulating Sigma;
-        Sigma_j_j = data.Sigma.at(j,j);
         aux_j_counter = 0;
 
         for(unsigned int id_col = 0; id_col < data.d; id_col++){
@@ -165,16 +163,17 @@ void update_y_mat_missing(modelParam & data,
 
         }
 
+      }
 
       //Rcpp::Rcout << "Value for ii:" << ii << endl;
-      arma::mat Sigma_mj_mj_inv = arma::inv(Sigma_mj_mj);
+      Sigma_mj_mj_inv = arma::inv(Sigma_mj_mj);
       arma::mat scale_mean_aux = Sigma_j_mj*Sigma_mj_mj_inv;
 
 
       double variance_aux = data.Sigma(ii,ii) - arma::as_scalar(scale_mean_aux*Sigma_mj_j);
       double mean_y_ii;
 
-      for(int na_id = 0; na_id < na_indicators.n_rows;na_id++){
+      for(unsigned int na_id = 0; na_id < na_indicators.n_rows;na_id++){
         if(na_indicators(na_id,ii)==1){
           mean_y_ii = y_mat_hat.at(na_id,ii) + arma::as_scalar(scale_mean_aux*(y_mj_t.unsafe_col(na_id)-y_hat_mj_t.unsafe_col(na_id)));
           // Rcpp::Rcout << " Printing the "
@@ -185,5 +184,7 @@ void update_y_mat_missing(modelParam & data,
 
     }
 
+    return;
 
 }
+

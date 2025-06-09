@@ -115,6 +115,7 @@ Rcpp::List cppsubart(arma::mat x_train,
       arma::colvec Sigma_mj_j((data.d-1),arma::fill::none); // 2d--change -- TODO: change this to a vector and make things simpler later.
       arma::mat Sigma_mj_mj((data.d-1),(data.d-1),arma::fill::none); // 2d--change
       arma::mat Sigma_mj_mj_inv((data.d-1),(data.d-1),arma::fill::none);
+      arma::mat scale_mean_aux(1,(data.d-1),arma::fill::none);
 
       // Declaring Sigmas and auxiliarys int/doubles
       double Sigma_j_j;
@@ -201,9 +202,11 @@ Rcpp::List cppsubart(arma::mat x_train,
             // ============================================
 
             Sigma_mj_mj_inv = arma::inv(Sigma_mj_mj);
+            scale_mean_aux =  Sigma_j_mj*Sigma_mj_mj_inv;
 
             for(unsigned int id_train = 0; id_train <data.n; id_train++){
-                partial_u.at(id_train) = arma::as_scalar(Sigma_j_mj*(Sigma_mj_mj_inv*(y_mj_t.unsafe_col(id_train)-y_hat_mj_t.unsafe_col(id_train))));
+                partial_u.at(id_train) = arma::as_scalar(scale_mean_aux*(y_mj_t.unsafe_col(id_train)-y_hat_mj_t.unsafe_col(id_train)));
+
             }
 
             double v = Sigma_j_j - arma::as_scalar(Sigma_j_mj*(Sigma_mj_mj_inv*Sigma_mj_j));

@@ -12,6 +12,6 @@ void update_mu_and_predictions(Node* tree,
 
 void update_a_j(modelParam &data);
 void updateSigma(arma::mat &f_sum_trees,modelParam &data);
-
+void update_y_mat_missing(modelParam & data,arma::mat &y_mat_hat,arma::mat &na_indicators, unsigned int ii);
 
 #endif
