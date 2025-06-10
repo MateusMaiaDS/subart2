@@ -129,37 +129,35 @@ void update_y_mat_missing(modelParam & data,
       arma::mat y_hat_mj_t(data.d-1,data.n,arma::fill::none);
 
 
-
       // Declaring Sigmas and auxiliarys int/doubles
       unsigned int aux_j_counter = 0;
       unsigned int extra_aux_j_counter = 0;
 
-      for(unsigned int j = 0; j < data.d;j++){
+      // Just a simpler way to re-use the previous code for MV cases
+      unsigned int j = ii;
 
-        // Popoulating Sigma;
-        aux_j_counter = 0;
+      // Popoulating Sigma;
+      aux_j_counter = 0;
 
-        for(unsigned int id_col = 0; id_col < data.d; id_col++){
+      for(unsigned int id_col = 0; id_col < data.d; id_col++){
 
-          if(id_col!=j){
-            Sigma_j_mj[aux_j_counter] = data.Sigma.at(j,id_col);
-            Sigma_mj_j[aux_j_counter] = data.Sigma.at(j,id_col);
-            y_mj.unsafe_col(aux_j_counter) = data.y_mat.unsafe_col(id_col);
-            y_hat_mj.unsafe_col(aux_j_counter) = f_sum_trees.unsafe_col(id_col);
-            extra_aux_j_counter = 0;
+        if(id_col!=j){
+          Sigma_j_mj[aux_j_counter] = data.Sigma.at(j,id_col);
+          Sigma_mj_j[aux_j_counter] = data.Sigma.at(j,id_col);
+          y_mj.unsafe_col(aux_j_counter) = data.y_mat.unsafe_col(id_col);
+          y_hat_mj.unsafe_col(aux_j_counter) = f_sum_trees.unsafe_col(id_col);
+          extra_aux_j_counter = 0;
 
-            for(unsigned int extra_id_col = 0; extra_id_col < data.d; extra_id_col++){
+          for(unsigned int extra_id_col = 0; extra_id_col < data.d; extra_id_col++){
 
-              if(extra_id_col!=j){
-                Sigma_mj_mj.at(aux_j_counter,extra_aux_j_counter) = data.Sigma.at(id_col,extra_id_col);
-                extra_aux_j_counter++;
-              }
-
+            if(extra_id_col!=j){
+              Sigma_mj_mj.at(aux_j_counter,extra_aux_j_counter) = data.Sigma.at(id_col,extra_id_col);
+              extra_aux_j_counter++;
             }
 
-            aux_j_counter++;
-
           }
+
+          aux_j_counter++;
 
         }
 
@@ -176,7 +174,6 @@ void update_y_mat_missing(modelParam & data,
       for(unsigned int na_id = 0; na_id < na_indicators.n_rows;na_id++){
         if(na_indicators(na_id,ii)==1){
           mean_y_ii = f_sum_trees.at(na_id,ii) + arma::as_scalar(scale_mean_aux*(y_mj_t.unsafe_col(na_id)-y_hat_mj_t.unsafe_col(na_id)));
-          // Rcpp::Rcout << " Printing the "
           data.y_mat.at(na_id,ii) = arma::randn(arma::distr_param(mean_y_ii,sqrt(variance_aux)));
         }
       }
