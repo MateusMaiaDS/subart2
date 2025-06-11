@@ -2,7 +2,7 @@ rm(list=ls())
 devtools::load_all()
 set.seed(42)
 
-n <- 250
+n <- 1000
 d <- 2
 
 # # Simulate from a function
@@ -22,10 +22,10 @@ y_mat <- data$y
 # y_mat[,1] <- y_mat[,1] + err[1,1]
 # y_mat[,2] <- y_mat[,2] + err[2,2]
 
-n_tree = 100
+n_tree = 200
 node_min_size = 2
-n_mcmc = 2000
-n_burn = 1000
+n_mcmc = 5000
+n_burn = 2500
 alpha = 0.95
 beta = 2
 nu = 3
@@ -39,24 +39,25 @@ diagnostic = TRUE
 
 
 x_train <- data.frame(x_train)
-subart_mod <- subart2::subart(x_train = x_train,
-                              y_mat = y_mat,
-                              x_test = x_train,
-                              n_tree = n_tree,
-                              n_mcmc = n_mcmc,
-                              n_burn = n_burn)
+init_time <- Sys.time()
+subart_mod <- subart(x_train = x_train,
+                      y_mat = y_mat,
+                      x_test = x_train,
+                      n_tree = n_tree,
+                      n_mcmc = n_mcmc,
+                      n_burn = n_burn)
+end_time <- Sys.time() - init_time
+# par(mfrow=c(2,1))
 
-par(mfrow=c(2,1))
+# plot(subart_mod$y_hat_mean[,1],y_mat[,1],
+#      xlab = "y.1.pred",ylab = "y.1.obs")
+# plot(subart_mod$y_hat_mean[,2],y_mat[,2],
+#      xlab = "y.2.pred",ylab = "y.2.obs")
 
-plot(subart_mod$y_hat_mean[,1],y_mat[,1],
-     xlab = "y.1.pred",ylab = "y.1.obs")
-plot(subart_mod$y_hat_mean[,2],y_mat[,2],
-     xlab = "y.2.pred",ylab = "y.2.obs")
-
-par(mfrow=c(2,1))
-plot(sqrt(subart_mod$Sigma_post[1,1,]), type = "l",xlab = "mcmc", ylab = expression(sigma[11]))
+# par(mfrow=c(2,1))
+# plot(sqrt(subart_mod$Sigma_post[1,1,]), type = "l",xlab = "mcmc", ylab = expression(sigma[11]))
 # abline(h = sqrt(data$Sigma[1,1]), col = "blue",lty = 2)
-plot(sqrt(subart_mod$Sigma_post[2,2,]), type = "l",xlab = "mcmc", ylab = expression(sigma[22]))
+# plot(sqrt(subart_mod$Sigma_post[2,2,]), type = "l",xlab = "mcmc", ylab = expression(sigma[22]))
 # abline(h = sqrt(data$Sigma[2,2]), col = "blue",lty = 2)
 
 # original_subart <- subart::subart(x_train = x_train,
@@ -66,14 +67,14 @@ plot(sqrt(subart_mod$Sigma_post[2,2,]), type = "l",xlab = "mcmc", ylab = express
 # #
 # #
 # subart_mod <- original_subart
-plot(subart_mod$y_hat_mean[,1],data$y[,1],
-     xlab = "y.1.pred",ylab = "y.1.obs")
-plot(subart_mod$y_hat_mean[,2],data$y[,2],
-     xlab = "y.2.pred",ylab = "y.2.obs")
+# plot(subart_mod$y_hat_mean[,1],data$y[,1],
+#      xlab = "y.1.pred",ylab = "y.1.obs")
+# plot(subart_mod$y_hat_mean[,2],data$y[,2],
+#      xlab = "y.2.pred",ylab = "y.2.obs")
 
-par(mfrow=c(2,1))
-plot(sqrt(subart_mod$Sigma_post[1,1,]), type = "l",xlab = "mcmc", ylab = expression(sigma[11]))
-plot(sqrt(subart_mod$Sigma_post[2,2,]), type = "l",xlab = "mcmc", ylab = expression(sigma[11]))
+# par(mfrow=c(2,1))
+# plot(sqrt(subart_mod$Sigma_post[1,1,]), type = "l",xlab = "mcmc", ylab = expression(sigma[11]))
+# plot(sqrt(subart_mod$Sigma_post[2,2,]), type = "l",xlab = "mcmc", ylab = expression(sigma[11]))
 
 
 dbart_mod <- dbarts::bart(x.train = x_train,ntree = n_tree,
@@ -86,22 +87,22 @@ dbart_mod_two <- dbarts::bart(x.train = x_train,ntree = n_tree,
                                                                                       "change" = 0.01,
                                                                                       "swap" = 0.0,
                                                                                       "birth" = 0.5))
-par(mfrow=c(2,2))
-plot(dbart_mod$yhat.train.mean,y_mat[,1],xlab = "dbart_pred",ylab = "y_obs")
-plot(dbart_mod$yhat.train.mean,subart_mod$y_hat_mean[,1],xlab = "dbart_pred",ylab = "subart")
-
-
-plot(dbart_mod_two$yhat.train.mean,y_mat[,2],xlab = "dbart_pred",ylab = "y_obs")
-plot(dbart_mod_two$yhat.train.mean,subart_mod$y_hat_mean[,2],xlab = "dbart_pred",ylab = "subart")
+# par(mfrow=c(2,2))
+# plot(dbart_mod$yhat.train.mean,y_mat[,1],xlab = "dbart_pred",ylab = "y_obs")
+# plot(dbart_mod$yhat.train.mean,subart_mod$y_hat_mean[,1],xlab = "dbart_pred",ylab = "subart")
+#
+#
+# plot(dbart_mod_two$yhat.train.mean,y_mat[,2],xlab = "dbart_pred",ylab = "y_obs")
+# plot(dbart_mod_two$yhat.train.mean,subart_mod$y_hat_mean[,2],xlab = "dbart_pred",ylab = "subart")
 
 
 bart_mod <- BART::gbart(x.train = x_train,y.train = y_mat[,1],ntree = n_tree)
-plot(bart_mod$yhat.train.mean,y_mat[,1])
-plot(bart_mod$yhat.train.mean,
-     dbart_mod$yhat.train.mean)
-
-plot(bart_mod$yhat.train.mean,
-     subart_mod$y_hat_mean[,1])
+# plot(bart_mod$yhat.train.mean,y_mat[,1])
+# plot(bart_mod$yhat.train.mean,
+#      dbart_mod$yhat.train.mean)
+#
+# plot(bart_mod$yhat.train.mean,
+#      subart_mod$y_hat_mean[,1])
 
 # plot(x_train$X1,dbart_mod$yhat.train.mean,main = "dbart")
 # plot(x_train$X1,subart_mod$y_hat_mean[,1],main = "subart")
@@ -114,4 +115,6 @@ plot(bart_mod$yhat.train.mean,
 # lines(sqrt(subart_mod$Sigma_post[1,1,]), type = 'l', col = 'blue')
 
 
-partial_dependance_plot(variable_index = 3,n_points = 10,use_quantiles = TRUE,x_train = x_train,y_train = y_mat)
+# partial_dependance_plot(variable_index = 3,n_points = 10,use_quantiles = TRUE,x_train = x_train,y_train = y_mat)
+
+end_time

@@ -99,7 +99,7 @@ void update_y_mat_missing(modelParam & data,
       double Sigma_mj_j = data.Sigma.at(ij,ii);
       double Sigma_mj_mj = data.Sigma.at(ij,ij);
 
-      double scale_mean_aux = Sigma_j_mj*Sigma_mj_mj;
+      double scale_mean_aux = Sigma_j_mj/Sigma_mj_mj;
 
       double variance_aux = data.Sigma.at(ii,ii) - scale_mean_aux*Sigma_mj_j;
       double mean_y_ii;

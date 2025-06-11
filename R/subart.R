@@ -412,7 +412,8 @@ subart <- function(x_train,
         na_boolean <- TRUE
 
         print(na_indicators)
-        bart_obj <- cppsubart_missing(x_train_scale,
+        bart_obj <- if(ncol(y_mat_scale)==2){
+          cppsubart_missing_2d(x_train_scale,
                                     y_mat_scale,
                                     number_na,
                                     na_indicators,
@@ -431,6 +432,27 @@ subart <- function(x_train,
                                     hier_prior_sigma,
                                     categorical_indicators,
                                     fit_test)
+        } else {
+          cppsubart_missing(x_train_scale,
+                            y_mat_scale,
+                            number_na,
+                            na_indicators,
+                            x_test_scale,
+                            xcut_m,
+                            n_tree,
+                            node_min_size,
+                            n_mcmc,
+                            n_burn,
+                            Sigma_init,
+                            mu_init,
+                            sigma_mu_j,
+                            alpha,beta,nu,
+                            S_0_wish,
+                            A_j,
+                            hier_prior_sigma,
+                            categorical_indicators,
+                            fit_test)
+        }
 
       } else {
         na_boolean <- FALSE
@@ -439,23 +461,44 @@ subart <- function(x_train,
           x_test_scale <- x_train_scale
         }
 
-        bart_obj <- cppsubart(x_train_scale,
-                              y_mat_scale,
-                              x_test_scale,
-                              xcut_m,
-                              n_tree,
-                              node_min_size,
-                              n_mcmc,
-                              n_burn,
-                              Sigma_init,
-                              mu_init,
-                              sigma_mu_j,
-                              alpha,beta,nu,
-                              S_0_wish,
-                              A_j,
-                              hier_prior_sigma,
-                              categorical_indicators,
-                              fit_test)
+        bart_obj <-if(ncol(y_mat_scale)==2){
+          cppsubart_2d(x_train_scale,
+                       y_mat_scale,
+                       x_test_scale,
+                       xcut_m,
+                       n_tree,
+                       node_min_size,
+                       n_mcmc,
+                       n_burn,
+                       Sigma_init,
+                       mu_init,
+                       sigma_mu_j,
+                       alpha,beta,nu,
+                       S_0_wish,
+                       A_j,
+                       hier_prior_sigma,
+                       categorical_indicators,
+                       fit_test)
+        } else {
+          cppsubart(x_train_scale,
+                    y_mat_scale,
+                    x_test_scale,
+                    xcut_m,
+                    n_tree,
+                    node_min_size,
+                    n_mcmc,
+                    n_burn,
+                    Sigma_init,
+                    mu_init,
+                    sigma_mu_j,
+                    alpha,beta,nu,
+                    S_0_wish,
+                    A_j,
+                    hier_prior_sigma,
+                    categorical_indicators,
+                    fit_test)
+        }
+
       }
     }
 
