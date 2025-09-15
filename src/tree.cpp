@@ -465,3 +465,205 @@ void prune(Node *tree,
   return;
 
 }
+
+
+
+void change(Node *tree,
+          modelParam &data,
+          arma::vec &curr_res,
+          arma::vec &curr_u,
+          unsigned int &j){
+
+
+  // Getting the number of terminal nodes
+  std::vector<Node*> t_nodes(0);
+  std::vector<Node*> nog_nodes(0);
+
+  get_leaves(tree,t_nodes);
+  get_nogs(tree,nog_nodes);
+
+  Node* c_node;
+  unsigned int number_leaves = t_nodes.size();
+  unsigned int number_nogs = nog_nodes.size();
+
+  // If the tree os a root
+  if(nog_nodes.size()==1){
+    c_node = nog_nodes[0];
+  } else {
+    c_node = nog_nodes[arma::randi(arma::distr_param(0,(number_leaves-1)))];
+  }
+
+  for(auto& leaf:t_nodes){
+    leaf->updateResiduals(data,curr_res,curr_u,j);
+  }
+
+
+  // Selecting a splitting variable and a split rule
+  //(explore the logic of selecting a good candidate for the split rule)
+  unsigned int var_split_candidate = arma::randi<arma::uword>(arma::distr_param(0, data.p - 1));
+
+
+  double lower_candidate;
+  double upper_candidate;
+
+  // // Obtaining the limits
+  c_node->getLimits(var_split_candidate,
+                    lower_candidate,
+                    upper_candidate);
+
+  // No valid split_var_cutpoint is available
+  if(lower_candidate==upper_candidate){
+    return;
+  }
+
+  arma::vec var_split_rule_numcuts = data.xcut.col(var_split_candidate);
+
+  double var_split_rule_candidate = sample_split_var_rule_from_xcut(var_split_rule_numcuts,
+                                                                    lower_candidate,
+                                                                    upper_candidate); //
+
+  // If not valid split vars are found
+  if(var_split_candidate==-1.0){
+    return;
+  }
+
+  // Assigned left and right for the current train index
+  arma::uvec left_id = c_node->train_index;
+  arma::uvec right_id  = c_node->train_index;
+  unsigned int left_id_counter = 0;
+  unsigned int right_id_counter = 0;
+
+
+  double r_sum_left = 0.0;
+  double u_sum_left = 0.0;
+
+  double r_sum_right = 0.0;
+  double u_sum_right = 0.0;
+
+  for(auto& id:c_node->train_index){
+
+    // Here I will update the r_sum and u_sum to avoid to go over through the same iterations when doing left->updateResiduals()
+    if(data.x_train.at(id,var_split_candidate) <= var_split_rule_candidate ){
+
+      left_id[left_id_counter] = id;
+      r_sum_left = r_sum_left + curr_res[id];
+      u_sum_left = u_sum_left + curr_res[id];
+
+      left_id_counter++;
+    } else {
+
+      right_id[right_id_counter] = id;
+      r_sum_right = r_sum_right + curr_res[id];
+      u_sum_right = u_sum_right + curr_res[id];
+      right_id_counter++;
+
+    }
+
+  }
+
+
+  if(left_id_counter==0 || right_id_counter==0) {
+    return; // Exit the grow move as the new grow is not valid.
+  }
+
+  // Calculating sufficient statistics for left and right nodes
+  double Gamma_j_left;
+  double S_j_left;
+
+  double Gamma_j_right;
+  double S_j_right;
+
+
+  // Updating other sufficientStatistics;
+  Gamma_j_left = left_id_counter+data.v_j/data.sigma_mu_j_sq[j];
+  S_j_left = r_sum_left-u_sum_left;
+
+  Gamma_j_right = right_id_counter+data.v_j/data.sigma_mu_j_sq[j];
+  S_j_right = r_sum_right-u_sum_right;
+
+
+  // Calculate sufficient statistics for the left and right node outside the UpdateResiduals function.
+
+  double new_tree_log_likelihood_ratio = (-0.5*log(Gamma_j_left) + 0.5*(S_j_left*S_j_left)/(data.v_j*Gamma_j_left)) + // Core of the likelihood of the left node
+    (-0.5*log(Gamma_j_right) + 0.5*(S_j_right*S_j_right)/(data.v_j*Gamma_j_right))- // Core of the likelihood of the left node
+    (-0.5*log(c_node->left->Gamma_j) + 0.5*(c_node->left->S_j*c_node->left->S_j)/(data.v_j*c_node->left->Gamma_j)) -
+    (-0.5*log(c_node->right->Gamma_j) + 0.5*(c_node->right->S_j*c_node->right->S_j)/(data.v_j*c_node->right->Gamma_j)) ; // Core of the current left node
+
+
+  // Reminder the node_log_likelihood is:
+  // node->log_likelihood = -0.5*log(2*arma::datum::pi*sigma_mu_j_sq[j])+0.5*log(data.v_j/node->Gamma_j) +0.5*(S_j*S_j)/(data.v_j*node->Gamma_j);
+
+  // Calculating the acceptance ratio
+  double acceptance = exp(new_tree_log_likelihood_ratio); // Remember tree prior and log-likelihood just cancel out themselves for the CHANGE;
+
+
+  if(arma::randu(arma::distr_param(0.0,1.0)) < acceptance){
+
+    left_id.resize(left_id_counter); // Maybe in a future think a way of using arma::set_size? which is much faster
+    right_id.resize(right_id_counter); // Maybe in the future thinkk in a way of us arma::set_size? which is much faster.
+
+    // Updating the g_node
+    c_node->var_split = var_split_candidate;
+    c_node->var_split_rule = var_split_rule_candidate;
+    c_node->upper = upper_candidate;
+    c_node->lower = lower_candidate;
+
+    // Updating sufficient statistics for the left node
+    c_node->left->train_index = left_id;
+    c_node->left->n_leaf = left_id_counter;
+    // g_node->left->test_index = left_id_test; // TODO: implement the test index here
+    c_node->left->S_j = S_j_left;
+    c_node->left->Gamma_j = Gamma_j_left;
+
+    // Updating sufficient statistics for the right node
+    c_node->right->train_index = right_id;
+    c_node->right->n_leaf = right_id_counter;
+    // g_node->right->test_index = right_id_test; // TODO: implement the test index here
+    c_node->right->S_j = S_j_right;
+    c_node->right->Gamma_j = Gamma_j_right;
+
+
+    if(data.fit_test){
+
+      // Assigned left and right for the current train index
+      arma::uvec left_id_test = c_node->test_index;
+      arma::uvec right_id_test  = c_node->test_index;
+      unsigned int left_id_counter_test = 0;
+      unsigned int right_id_counter_test = 0;
+
+      for(auto& id_test:c_node->test_index){
+
+        // Here I will update the r_sum and u_sum to avoid to go over through the same iterations when doing left->updateResiduals()
+        if(data.x_test.at(id_test,var_split_candidate) <= var_split_rule_candidate ){
+
+          left_id_test[left_id_counter_test] = id_test;
+          left_id_counter_test++;
+        } else {
+
+          right_id_test[right_id_counter_test] = id_test;
+          right_id_counter_test++;
+
+        }
+
+      }
+
+      left_id_test.resize(left_id_counter_test); // Maybe in a future think a way of using arma::set_size? which is much faster
+      right_id_test.resize(right_id_counter_test); // Maybe in the future thinkk in a way of us arma::set_size? which is much faster
+
+      c_node->left->test_index = left_id_test;
+      c_node->right->test_index = right_id_test;
+
+    }
+
+
+  } else {
+
+    // Not need to modify anything all the nodes are already updated
+
+  }
+
+
+  return;
+
+}
+

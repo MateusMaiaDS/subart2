@@ -1,11 +1,11 @@
-source("R/other_functions.R")
-Rcpp::sourceCpp("src/subart.cpp")
-n <- 250
+source("/Users/mateusmaia/subart2/R/other_functions.R")
+Rcpp::sourceCpp("/Users/mateusmaia/subart2/src/subart.cpp")
+n <- 1000
 d <- 2
 set.seed(42)
 x_test <- x_train <- matrix(runif(n = n*d,min = -pi,max = pi),ncol=d)
 y_mat <- matrix(rnorm(n = n*d),ncol=d)
-y_mat[,1] <- sin(x_train[,1]) + rnorm(n = n,sd = 0.25)
+y_mat[,1] <- sin(x_train[,1]) + rnorm(n = n,sd = 0.1)
 y_mat[,2] <- cos(x_train[,2]) + rnorm(n = n,sd = 0.1)
 
 Sigma_init <- diag(ncol = d,nrow=d)
@@ -253,13 +253,17 @@ subart_cpp <- cppsubart(x_train,
 end <- Sys.time()-init
 end
 
+png("traceplot.png", width = 12, height = 8, units = "in", res = 300, bg = "white", type = "cairo-png")
 par(mfrow=c(2,1))
 plot(sqrt(subart_cpp[[3]][1,1,]), type = 'l',xlab = "MCMC", ylab = expression(sigma[1,1]))
 plot(sqrt(subart_cpp[[3]][2,2,]), type = 'l',xlab = "MCMC", ylab = expression(sigma[2,2]))
+dev.off()
 
+
+png("f_hat_mean.png", width = 12, height = 8, units = "in", res = 300, bg = "white", type = "cairo-png")
 par(mfrow=c(1,2))
 plot(x_train[,1],apply(subart_cpp[[1]],c(1,2),mean)[,1], xlab = "x.1", ylab = "y1")
 lines(sort(x_train[,1]), sin(sort(x_train[,1])), col = 'blue')
 plot(x_train[,2],apply(subart_cpp[[1]],c(1,2),mean)[,2], xlab = "x.2", ylab = "y2")
 lines(sort(x_train[,2]), cos(sort(x_train[,2])), col = 'blue')
-
+dev.off()
