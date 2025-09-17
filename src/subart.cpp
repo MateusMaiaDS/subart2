@@ -244,17 +244,15 @@ Rcpp::List cppsubart(arma::mat x_train,
                 }
 
                 // Selecting each verb -- Here I considering the probability of Grow:0.3, Prune: 0.3, and Change = 0.4 -- May need to reavulate those
-                if(verb < 0.5) {
+                if(verb < 0.3) {
                   data.move_proposal.at(0)++;
                   grow(all_trees[curr_tree_counter],data,partial_residuals,partial_u,j);
-                } else if((verb >= 0.5) & (verb < 1.0)){
+                } else if((verb >= 0.3) & (verb < 6.0)){
                   data.move_proposal.at(1)++;
                   prune(all_trees[curr_tree_counter],data,partial_residuals,partial_u,j);
                 } else {
                   data.move_proposal(2)++;
-                  // change(all_trees[curr_tree_counter],data,partial_residuals,partial_u,j); // Do change later
-                  grow(all_trees[curr_tree_counter],data,partial_residuals,partial_u,j);
-
+                  change(all_trees[curr_tree_counter],data,partial_residuals,partial_u,j); // Do change later
                 }
                 // std::cout << "Tree fit one:" << trees_fit_store.at(1,t,j) << std::endl;
 

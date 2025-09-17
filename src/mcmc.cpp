@@ -79,6 +79,8 @@ void update_y_mat_missing(modelParam & data,
                           arma::mat &na_indicators,
                           unsigned int ii){
 
+    unsigned int ij;
+
     if(data.d==1) {
 
       // For the univariate case.
@@ -87,7 +89,6 @@ void update_y_mat_missing(modelParam & data,
       // -------------------
     } else if(data.d == 2) {
 
-      unsigned int ij;
       // Once there are only two outcomes, if ii=1, the selected column should be the other, such as
       if(ii==0) {
          ij = 1;

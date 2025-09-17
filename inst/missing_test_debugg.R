@@ -1,7 +1,7 @@
 # install.packages("devtools")
 # devtools::install_github("MateusMaiaDS/subart",ref = "feat/missing_continuous")
 
-devtools::load_all("C:/Users/mm538r/subart2/")
+devtools::load_all("/Users/mateusmaia/subart2")
 set.seed(42)
 library(expm)
 library(scales)
