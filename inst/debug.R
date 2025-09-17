@@ -1,5 +1,7 @@
-source("/Users/mateusmaia/subart2/R/other_functions.R")
-Rcpp::sourceCpp("/Users/mateusmaia/subart2/src/subart.cpp")
+# source("/Users/mateusmaia/subart2/R/other_functions.R")
+# Rcpp::sourceCpp("/Users/mateusmaia/subart2/src/subart.cpp")
+source("C:/Users/mm538r/subart2/R/other_functions.R")
+Rcpp::sourceCpp("C:/Users/mm538r/subart2/src/subart.cpp")
 n <- 1000
 d <- 2
 set.seed(42)
