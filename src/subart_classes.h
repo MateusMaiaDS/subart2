@@ -87,7 +87,7 @@ struct modelParam {
 struct modelParam_uni {
 
   arma::mat x_train;
-  arma::mat y_mat;
+  arma::vec y;
   arma::mat x_test;
   arma::mat xcut;
 
@@ -107,12 +107,10 @@ struct modelParam_uni {
   double beta;
   arma::vec sigma_mu;
   arma::mat Sigma;
-  arma::mat S_0_wish;
-  arma::vec a_j_vec;
-  arma::vec A_j_vec;
-  arma::mat W;
-  arma::mat R;
-  arma::mat D;
+  arma::mat S_0;
+  double a_j;
+  double A_j;
+
 
   double nu;
   int node_min_size;
@@ -134,6 +132,9 @@ struct modelParam_uni {
   double sigma_mu_j;
   double sigma_mu_j_sq;
 
+  // Creating a boolean to know if will fit the test or not
+  bool fit_test;
+
   // Defining the constructor for the model param
   modelParam_uni(arma::mat x_train_,
                  arma::vec y_mat_,
@@ -144,13 +145,14 @@ struct modelParam_uni {
                  double alpha_,
                  double beta_,
                  double nu_,
-                 arma::vec sigma_mu_,
-                 arma::mat Sigma_,
-                 arma::mat S_0_wish_,
-                 arma::vec A_j_vec_,
+                 double sigma_mu_,
+                 double Sigma_,
+                 double S_0_,
+                 double A_j_,
                  double n_mcmc_,
                  double n_burn_,
-                 arma::uvec categorical_indicators_);
+                 arma::uvec categorical_indicators_,
+                 bool fit_test_);
 
 };
 
