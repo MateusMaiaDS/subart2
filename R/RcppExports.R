@@ -17,3 +17,7 @@ cppsubart_missing_2d <- function(x_train, y_mat, n_missing, na_indicators, x_tes
     .Call('_subart2_cppsubart_missing_2d', PACKAGE = 'subart2', x_train, y_mat, n_missing, na_indicators, x_test, x_cut, n_tree, node_min_size, n_mcmc, n_burn, Sigma_init, mu_init, sigma_mu, alpha, beta, nu, S_0_wish, A_j_vec, hier_prior_sigma, categorical_indicators, fit_test)
 }
 
+cppsubart_univariate <- function(x_train, y, x_test, x_cut, n_tree, node_min_size, n_mcmc, n_burn, sigma_init, mu_init, sigma_mu, alpha, beta, nu, S_0, A_j, hier_prior_sigma, categorical_indicators, fit_test) {
+    .Call('_subart2_cppsubart_univariate', PACKAGE = 'subart2', x_train, y, x_test, x_cut, n_tree, node_min_size, n_mcmc, n_burn, sigma_init, mu_init, sigma_mu, alpha, beta, nu, S_0, A_j, hier_prior_sigma, categorical_indicators, fit_test)
+}
+

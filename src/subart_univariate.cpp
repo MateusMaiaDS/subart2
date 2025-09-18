@@ -2,7 +2,7 @@
 #include "tree.h"
 #include "mcmc.h"
 #include <RcppArmadillo.h>
-
+#include "tree_univariate.h"
 
 
 // [[Rcpp::export]]
@@ -48,10 +48,7 @@ Rcpp::List cppsubart_univariate(arma::mat x_train,
                   categorical_indicators,
                   fit_test);
 
-  // Only for d>2
-  if(data.d<2){
-    throw std::invalid_argument(" The y response should cannot be unidimensional for subart call");
-  }
+
   // Getting n_post
   unsigned int n_post = n_mcmc - n_burn;
 
@@ -177,61 +174,58 @@ Rcpp::List cppsubart_univariate(arma::mat x_train,
         // Selecting each verb -- Here I considering the probability of Grow:0.3, Prune: 0.3, and Change = 0.4 -- May need to reavulate those
         if(verb < 0.5) {
           data.move_proposal.at(0)++;
-          grow(all_trees[curr_tree_counter],data,partial_residuals,partial_u,j);
+          grow_uni(all_trees[curr_tree_counter],data,partial_residuals);
         } else if((verb >= 0.5) & (verb < 1.0)){
           data.move_proposal.at(1)++;
-          prune(all_trees[curr_tree_counter],data,partial_residuals,partial_u,j);
+          prune_uni(all_trees[curr_tree_counter],data,partial_residuals);
         } else {
           data.move_proposal(2)++;
-          // change(all_trees[curr_tree_counter],data,partial_residuals,partial_u,j); // Do change later
-          grow(all_trees[curr_tree_counter],data,partial_residuals,partial_u,j);
+          change_uni(all_trees[curr_tree_counter],data,partial_residuals);
 
         }
         // std::cout << "Tree fit one:" << trees_fit_store.at(1,t,j) << std::endl;
 
         // Updating Mu and Predictions
-        update_mu_and_predictions(all_trees[curr_tree_counter],data,trees_fit_store,trees_fit_store_test,t,j);
+        update_mu_and_predictions_uni(all_trees[curr_tree_counter],data,trees_fit_store,trees_fit_store_test,t);
 
         // std::cout << "Obs one:" << f_sum_trees.at(1,j) << std::endl;
         // std::cout << "Tree fit two:" << trees_fit_store.at(1,t,j) << std::endl;
 
         // At the end of the iteration we will have
-        f_sum_trees.unsafe_col(j) = f_sum_j_excluding_tree_t + trees_fit_store.slice(j).unsafe_col(t); // REMEMBER TO UPDATE trees_fit_store (specifically the col(t)) BEFORE!
+        f_sum_trees = f_sum_j_excluding_tree_t + trees_fit_store.unsafe_col(t); // REMEMBER TO UPDATE trees_fit_store (specifically the col(t)) BEFORE!
 
         // std::cout << "Obs one (iter2): " << f_sum_trees.at(1,j) << std::endl;
 
         // Only if fitting test
         if(data.fit_test){
-          f_sum_trees_test.unsafe_col(j) = f_sum_trees_test.unsafe_col(j) + trees_fit_store_test.slice(j).unsafe_col(t);
+          f_sum_trees_test = f_sum_trees_test + trees_fit_store_test.unsafe_col(t);
         }
 
         // Add latter : add the variable selection step. I.e: which variables are used and which are not
 
       } // End of iteration in the trees
-    } // End of the iterations of response (j)
 
 
     // Updating the covariance matrix
-    if(hier_prior_sigma){
-      update_a_j(data);
-    }
+    update_a_j_uni(data);
 
-    updateSigma(f_sum_trees,data);
+
+    updateSigma_uni(f_sum_trees,data);
 
 
     // Storing all_Sigma
-    all_Sigma_post.slice(i) = data.Sigma;
+    all_sigma_post[i] = data.sigma_sq;
 
     // Storing MCMC iterations
     if(i >= n_burn){
 
-      y_train_hat_post.slice(curr) = f_sum_trees;
+      y_train_hat_post.unsafe_col(curr) = f_sum_trees;
 
       if(data.fit_test){
-        y_test_hat_post.slice(curr) = f_sum_trees_test;
+        y_test_hat_post.unsafe_col(curr) = f_sum_trees_test;
       }
 
-      Sigma_post.slice(curr) = data.Sigma;
+      sigma_post[curr] = data.sigma_sq;
       curr++;
 
     }
@@ -244,6 +238,6 @@ Rcpp::List cppsubart_univariate(arma::mat x_train,
 
   return Rcpp::List::create(y_train_hat_post, //[1]
                             y_test_hat_post, //[2]
-                            Sigma_post, //[3]
-                            all_Sigma_post); // [4];
+                            sigma_post, //[3]
+                            all_sigma_post); // [4];
 }

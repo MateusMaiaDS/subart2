@@ -131,12 +131,42 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// cppsubart_univariate
+Rcpp::List cppsubart_univariate(arma::mat x_train, arma::vec y, arma::mat x_test, arma::mat x_cut, unsigned int n_tree, unsigned int node_min_size, unsigned int n_mcmc, unsigned int n_burn, double sigma_init, double mu_init, double sigma_mu, double alpha, double beta, double nu, double S_0, double A_j, bool hier_prior_sigma, arma::uvec categorical_indicators, bool fit_test);
+RcppExport SEXP _subart2_cppsubart_univariate(SEXP x_trainSEXP, SEXP ySEXP, SEXP x_testSEXP, SEXP x_cutSEXP, SEXP n_treeSEXP, SEXP node_min_sizeSEXP, SEXP n_mcmcSEXP, SEXP n_burnSEXP, SEXP sigma_initSEXP, SEXP mu_initSEXP, SEXP sigma_muSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP nuSEXP, SEXP S_0SEXP, SEXP A_jSEXP, SEXP hier_prior_sigmaSEXP, SEXP categorical_indicatorsSEXP, SEXP fit_testSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< arma::mat >::type x_train(x_trainSEXP);
+    Rcpp::traits::input_parameter< arma::vec >::type y(ySEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type x_test(x_testSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type x_cut(x_cutSEXP);
+    Rcpp::traits::input_parameter< unsigned int >::type n_tree(n_treeSEXP);
+    Rcpp::traits::input_parameter< unsigned int >::type node_min_size(node_min_sizeSEXP);
+    Rcpp::traits::input_parameter< unsigned int >::type n_mcmc(n_mcmcSEXP);
+    Rcpp::traits::input_parameter< unsigned int >::type n_burn(n_burnSEXP);
+    Rcpp::traits::input_parameter< double >::type sigma_init(sigma_initSEXP);
+    Rcpp::traits::input_parameter< double >::type mu_init(mu_initSEXP);
+    Rcpp::traits::input_parameter< double >::type sigma_mu(sigma_muSEXP);
+    Rcpp::traits::input_parameter< double >::type alpha(alphaSEXP);
+    Rcpp::traits::input_parameter< double >::type beta(betaSEXP);
+    Rcpp::traits::input_parameter< double >::type nu(nuSEXP);
+    Rcpp::traits::input_parameter< double >::type S_0(S_0SEXP);
+    Rcpp::traits::input_parameter< double >::type A_j(A_jSEXP);
+    Rcpp::traits::input_parameter< bool >::type hier_prior_sigma(hier_prior_sigmaSEXP);
+    Rcpp::traits::input_parameter< arma::uvec >::type categorical_indicators(categorical_indicatorsSEXP);
+    Rcpp::traits::input_parameter< bool >::type fit_test(fit_testSEXP);
+    rcpp_result_gen = Rcpp::wrap(cppsubart_univariate(x_train, y, x_test, x_cut, n_tree, node_min_size, n_mcmc, n_burn, sigma_init, mu_init, sigma_mu, alpha, beta, nu, S_0, A_j, hier_prior_sigma, categorical_indicators, fit_test));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_subart2_cppsubart", (DL_FUNC) &_subart2_cppsubart, 19},
     {"_subart2_cppsubart_2d", (DL_FUNC) &_subart2_cppsubart_2d, 19},
     {"_subart2_cppsubart_missing", (DL_FUNC) &_subart2_cppsubart_missing, 21},
     {"_subart2_cppsubart_missing_2d", (DL_FUNC) &_subart2_cppsubart_missing_2d, 21},
+    {"_subart2_cppsubart_univariate", (DL_FUNC) &_subart2_cppsubart_univariate, 19},
     {NULL, NULL, 0}
 };
 

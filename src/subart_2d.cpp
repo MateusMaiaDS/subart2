@@ -227,8 +227,7 @@ Rcpp::List cppsubart_2d(arma::mat x_train,
           prune(all_trees[curr_tree_counter],data,partial_residuals,partial_u,j);
         } else {
           data.move_proposal(2)++;
-          // change(all_trees[curr_tree_counter],data,partial_residuals,partial_u,j); // Do change later
-          grow(all_trees[curr_tree_counter],data,partial_residuals,partial_u,j);
+          change(all_trees[curr_tree_counter],data,partial_residuals,partial_u,j);
 
         }
         // std::cout << "Tree fit one:" << trees_fit_store.at(1,t,j) << std::endl;

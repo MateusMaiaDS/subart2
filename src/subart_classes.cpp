@@ -131,7 +131,7 @@ modelParam_uni::modelParam_uni(arma::mat x_train_,
                        double beta_,
                        double nu_,
                        double sigma_mu_,
-                       double Sigma_,
+                       double sigma_,
                        double S_0_,
                        double A_j_,
                        double n_mcmc_,
@@ -146,8 +146,8 @@ modelParam_uni::modelParam_uni(arma::mat x_train_,
   x_test = x_test_;
   xcut = x_cut_;
 
-  n = x_train_.n_rows; // Converting uword to unsigned int; see if isn't a problme in the future
-  n_test = x_test_.n_rows; // Converting uword to unsigned int; see if isn't a problme in the future
+  n = x_train_.n_rows; // Converting uword to unsigned int; see if isn't a problem in the future
+  n_test = x_test_.n_rows; // Converting uword to unsigned int; see if isn't a problem in the future
 
   p = x_train.n_cols;
 
@@ -157,8 +157,9 @@ modelParam_uni::modelParam_uni(arma::mat x_train_,
   beta = beta_;
   nu = nu_;
   sigma_mu = sigma_mu_;
+  sigma_mu_sq = sigma_mu*sigma_mu;
 
-  Sigma = Sigma_;
+  sigma_sq = sigma_*sigma_;
   S_0 = S_0_;
   A_j = A_j_;
   a_j = 0.0;

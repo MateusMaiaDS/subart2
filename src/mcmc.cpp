@@ -38,6 +38,38 @@ void update_mu_and_predictions(Node* tree,
   return;
 }
 
+void update_mu_and_predictions_uni(Node* tree,
+                               modelParam_uni &data,
+                               arma::mat &trees_fit_store,
+                               arma::mat &trees_fit_store_test,
+                               unsigned int &t){
+
+  // Navigate through the whole tree and compute the mu values
+  std::vector<Node*> t_nodes(0);
+  get_leaves(tree,t_nodes);
+
+  for(auto& leaf:t_nodes){
+
+    leaf->mu = arma::randn(arma::distr_param((leaf->S_j)/(leaf->Gamma_j),sqrt(data.sigma_sq/(leaf->Gamma_j)))) ;
+
+    for(auto& id:leaf->train_index){
+      trees_fit_store.at(id,t) = leaf->mu;
+    }
+
+    // // Here replicate the same for the test
+    if(data.fit_test){
+      for(auto& id_test:leaf->test_index){
+        trees_fit_store_test.at(id_test,t) = leaf->mu;
+      }
+    }
+  }
+
+
+
+  return;
+}
+
+
 void update_a_j(modelParam &data){
 
   double shape_j = 0.5*(data.d+data.nu);
@@ -50,6 +82,24 @@ void update_a_j(modelParam &data){
 
     data.a_j_vec(j) = 1/a_j_vec_double_aux;
     data.S_0_wish(j,j) = (2*data.nu)/data.a_j_vec.at(j);
+  }
+
+  return;
+}
+
+
+void update_a_j_uni(modelParam_uni &data){
+
+  double shape_j = 0.5*(data.d+data.nu);
+  double Precision = 1/data.sigma_sq;
+
+  // Calculating shape and scale parameters
+  for(unsigned int j = 0; j < data.d; j++){
+    double scale_j = 1/(data.A_j*data.A_j)+data.nu*Precision;
+    double a_j_vec_double_aux = arma::randg(arma::distr_param(shape_j,1/scale_j));
+
+    data.a_j = 1/a_j_vec_double_aux;
+    data.S_0 = (2*data.nu)/data.a_j;
   }
 
   return;
@@ -70,6 +120,24 @@ void updateSigma(arma::mat &f_sum_trees,
 
   // Updating sigma
   data.Sigma = arma::iwishrnd((data.S_0_wish+S),data.nu + data.d - 1 + data.n);
+
+}
+
+void updateSigma_uni(arma::vec &f_sum_trees,
+                 modelParam_uni &data){
+
+  arma::vec r = f_sum_trees-data.y;
+  double S = arma::dot(r, r);
+
+  // posterior parameters (scalar analogue of IW)
+  double shape_post = 0.5 * (data.nu + data.n);
+  double scale_post = 0.5 * (data.S_0 + S);
+
+  // sample sigma^2 ~ Inv-Gamma(shape_post, scale_post)
+  // Armadillo's randg(k,theta) samples Gamma(k,theta)
+  // so Inv-Gamma(alpha,beta) = beta / Gamma(alpha,1)
+  double gamma_sample = arma::randg<double>(arma::distr_param(shape_post, 1.0));
+  data.sigma_sq = scale_post / gamma_sample;
 
 }
 

@@ -379,10 +379,8 @@ subart <- function(x_train,
 
     if(ncol(y_mat_scale)==1){ # For the univariate case
 
-      stop("Not available yet.")
-
       na_boolean <- FALSE
-      bart_obj <- cppbart_univariate(x_train_scale,
+      bart_obj <- cppsubart_univariate(x_train_scale,
                                      y_mat_scale,
                                      x_test_scale,
                                      xcut_m,
@@ -396,10 +394,9 @@ subart <- function(x_train,
                                      alpha,beta,nu,
                                      S_0_wish,
                                      A_j,
-                                     update_Sigma,
-                                     varimportance,
                                      hier_prior_sigma,
-                                     categorical_indicators)
+                                     categorical_indicators,
+                                     fit_test)
     } else {
 
 
@@ -517,195 +514,381 @@ subart <- function(x_train,
   all_Sigma_post <- bart_obj[[4]]
 
 
-  # Getting the mean values for the Sigma and \y_hat and \y_hat_test
-  Sigma_for <- matrix(0,nrow = nrow(Sigma_post), ncol = ncol(Sigma_post))
-  y_train_for <- matrix(0,nrow = nrow(y_mat),ncol = ncol(y_mat))
-
-  if(fit_test){
-    y_test_for <- matrix(0,nrow = nrow(x_test),ncol = ncol(y_mat))
-  }
-
   Sigma_scale <- if(ncol(y_mat)!=1){
     diag((max_y-min_y))
   } else {
     matrix((max_y-min_y),ncol=1,nrow=1)
   }
 
-  # Reg_model_bool
-  if(scale_y){
+  # The outcomes are different depending on the
+  if(ncol(y_mat)==1){
 
-    # Re-scaling Sigma_all, important to cover convergence issues.
-    for(k in 1:(dim(all_Sigma_post)[3])){
-      all_Sigma_post[,,k] <- crossprod(Sigma_scale,tcrossprod(all_Sigma_post[,,k],Sigma_scale))
+    # Getting the mean values for the Sigma and \y_hat and \y_hat_test
+    Sigma_for <- matrix(0,nrow = nrow(Sigma_post), ncol = ncol(Sigma_post))
+    y_train_for <- matrix(0,nrow = nrow(y_mat),ncol = ncol(y_mat))
 
+    if(fit_test){
+      y_test_for <- matrix(0,nrow = nrow(x_test),ncol = ncol(y_mat))
     }
 
-    for(i in 1:(dim(Sigma_post)[3])){
-      Sigma_post[,,i] <- crossprod(Sigma_scale,tcrossprod(Sigma_post[,,i],Sigma_scale))
-      Sigma_for <- Sigma_for +  Sigma_post[,,i]
-      for( jj in 1:NCOL(y_mat)){
-        y_train_for[,jj] <- y_train_for[,jj] + unnormalize_bart(z = y_train_post[,jj,i],a = min_y[jj],b = max_y[jj])
+    Sigma_scale <- numeric(Sigma_scale)
+    if(scale_y){
 
+      # Re-scaling Sigma_all, important to cover convergence issues.
+      all_Sigma_post <- all_Sigma_post * (Sigma_scale)^2
+      Sigma_post <- Sigma_post * (Sigma_scale)^2
+
+      for(i in 1:length(all_Sigma_post)){
+          y_train_for <- y_train_for + unnormalize_bart(z = y_train_post[,jj,i],a = min_y[jj],b = max_y[jj])
+
+          if(fit_test){
+            y_test_for[,jj] <- y_test_for[,jj] +  unnormalize_bart(z = y_test_post[,jj,i],a = min_y[jj],b = max_y[jj])
+            y_test_post[,jj,i] <-  unnormalize_bart(z = y_test_post[,jj,i],a = min_y[jj],b = max_y[jj])
+          }
+
+          y_train_post[,jj,i] <- unnormalize_bart(z = y_train_post[,jj,i],a = min_y[jj],b = max_y[jj])
+          if(na_boolean){
+            y_mat_post[,jj,i] <- unnormalize_bart(z = y_mat_post[,jj,i],a = min_y[jj],b = max_y[jj])
+          }
+        }
+      }
+    } else {
+      for(i in 1:(dim(Sigma_post)[3])){
+        Sigma_for <- Sigma_for + Sigma_post[,,i]
+        y_train_for <- y_train_for +  y_train_post[,,i]
         if(fit_test){
-          y_test_for[,jj] <- y_test_for[,jj] +  unnormalize_bart(z = y_test_post[,jj,i],a = min_y[jj],b = max_y[jj])
-          y_test_post[,jj,i] <-  unnormalize_bart(z = y_test_post[,jj,i],a = min_y[jj],b = max_y[jj])
+          y_test_for <- y_test_for +  y_test_post[,,i]
         }
 
-        y_train_post[,jj,i] <- unnormalize_bart(z = y_train_post[,jj,i],a = min_y[jj],b = max_y[jj])
-        if(na_boolean){
-          y_mat_post[,jj,i] <- unnormalize_bart(z = y_mat_post[,jj,i],a = min_y[jj],b = max_y[jj])
+      }
+    }
+
+
+    Sigma_post_mean <- Sigma_for/dim(Sigma_post)[3]
+    y_mat_mean <- y_train_for/dim(y_train_post)[3]
+
+    y_mat_test_mean <- if(fit_test){
+      y_test_for/dim(y_test_post)[3]
+    } else {
+      NULL
+    }
+
+    sigmas_mean <- sqrt(diag(Sigma_post_mean))
+
+    # Transforming to classification context
+
+    # Getting the list of outcomes
+    if(class_model){
+
+      # Calculate the ESS for all parameters throw a warning if any of them is smaller than half of the MCMC samples
+      if(diagnostic){
+
+        diagnostic_bool = FALSE
+        ESS_val <- matrix(NA, nrow = nrow(Sigma_post), ncol = ncol(Sigma_post))
+        ESS_warn <- FALSE
+        for(i in 1:nrow(Sigma_post)){
+          # ESS_val[i,i] <- ESS(x = Sigma_post[i,i,]) # For classification there's no sample
+          j = i
+          while(j < nrow(Sigma_post)){
+            j = j+1
+            ESS_val[i,j] <- ESS_val[j,i] <- ESS(x = Sigma_post[i,j,]/(sqrt(Sigma_post[i,i,])*sqrt(Sigma_post[j,j,])))
+            if(ESS_val[i,j]<round((n_mcmc-n_burn)/2,digits = 0)){
+              ESS_warn <- TRUE
+            }
+          }
         }
-      }
-    }
-  } else {
-    for(i in 1:(dim(Sigma_post)[3])){
-      Sigma_for <- Sigma_for + Sigma_post[,,i]
-      y_train_for <- y_train_for +  y_train_post[,,i]
-      if(fit_test){
-        y_test_for <- y_test_for +  y_test_post[,,i]
+
+      } else {
+        ESS_val <- NULL
       }
 
+      if(ESS_warn){
+        warning(paste0("A ESS less than ",round((n_mcmc-n_burn)/2,digits = 0)," was obtanied. Verify the traceplots and adjust the priors to improve the sampling."))
+      }
+
+
+
+
+      list_obj_ <- list(y_hat = y_train_post,
+                        y_hat_test = y_test_post,
+                        y_hat_mean = y_mat_mean,
+                        y_hat_test_mean = y_mat_test_mean,
+                        y_hat_mean_class = apply(y_mat_mean,2,function(x){ifelse(x>0,1,0)}),
+                        y_hat_test_mean_class = apply(y_mat_test_mean,2,function(x){ifelse(x>0,1,0)}),
+                        Sigma_post = Sigma_post,
+                        Sigma_post_mean = Sigma_post_mean,
+                        sigmas_post = bart_obj[[7]],
+                        all_Sigma_post = all_Sigma_post,
+                        var_importance = var_importance,
+                        var_importance_raw = var_importance_raw,
+                        prior = list(n_tree = n_tree,
+                                     alpha = alpha,
+                                     beta = beta,
+                                     tau_mu_j = tau_mu_j,
+                                     mu_init = mu_init,
+                                     tree_proposal = bart_obj[[5]],
+                                     tree_acceptance = bart_obj[[6]]),
+                        mcmc = list(n_mcmc = n_mcmc,
+                                    n_burn = n_burn),
+                        data = list(x_train = x_train,
+                                    y_mat = y_mat,
+                                    x_test = x_test),
+                        ESS = ESS_val)
+
+      class(list_obj_) <- "subart-probit"
+
+    } else {
+
+
+      # Calculate the ESS for all parameters throw a warning if any of them is smaller than half of the MCMC samples
+      if(diagnostic){
+
+        diagnostic_bool = FALSE
+        ESS_val <- matrix(NA, nrow = nrow(Sigma_post), ncol = ncol(Sigma_post))
+        ESS_warn <- FALSE
+        for(i in 1:nrow(Sigma_post)){
+          ESS_val[i,i] <- ESS(x = sqrt(Sigma_post[i,i,]))
+          j = i
+          while(j < nrow(Sigma_post)){
+            j = j+1
+            ESS_val[i,j] <- ESS_val[j,i] <- ESS(x = Sigma_post[i,j,]/(sqrt(Sigma_post[i,i,])*sqrt(Sigma_post[j,j,])))
+            if(ESS_val[i,j]<round((n_mcmc-n_burn)/2,digits = 0)){
+              ESS_warn <- TRUE
+            }
+          }
+        }
+
+      } else {
+        ESS_val <- NULL
+      }
+
+      if(ESS_warn){
+        warning(paste0("A ESS less than ",round((n_mcmc-n_burn)/2,digits = 0)," was obtanied. Verify the traceplots and adjust the priors to improve the sampling."))
+      }
+
+
+      # Returning the data list
+      data_list <- if(na_boolean){
+        list(x_train = x_train,
+             y_mat = y_mat,
+             x_test = x_test,
+             y_mat_post = y_mat_post)
+      } else {
+        list(x_train = x_train,
+             y_mat = y_mat,
+             x_test = x_test)
+      }
+
+      list_obj_ <- list(y_hat = y_train_post,
+                        y_hat_test = y_test_post,
+                        y_hat_mean = y_mat_mean,
+                        y_hat_test_mean = y_mat_test_mean,
+                        Sigma_post = Sigma_post,
+                        Sigma_post_mean = Sigma_post_mean,
+                        sigmas_mean = sigmas_mean,
+                        all_Sigma_post = all_Sigma_post,
+                        prior = list(n_tree = n_tree,
+                                     alpha = alpha,
+                                     beta = beta,
+                                     tau_mu_j = tau_mu_j,
+                                     df = df,
+                                     A_j = A_j,
+                                     mu_init = mu_init),
+                        mcmc = list(n_mcmc = n_mcmc,
+                                    n_burn = n_burn),
+                        data = data_list,
+                        ESS = ESS_val)
+
+      class(list_obj_) <- "subart"
     }
-  }
 
+  } else { ## ELSE FOR THE MULTI-DIMENSIONAL OUTCOME
 
-  Sigma_post_mean <- Sigma_for/dim(Sigma_post)[3]
-  y_mat_mean <- y_train_for/dim(y_train_post)[3]
+    # Getting the mean values for the Sigma and \y_hat and \y_hat_test
+    Sigma_for <- matrix(0,nrow = nrow(Sigma_post), ncol = ncol(Sigma_post))
+    y_train_for <- matrix(0,nrow = nrow(y_mat),ncol = ncol(y_mat))
 
-  y_mat_test_mean <- if(fit_test){
-    y_test_for/dim(y_test_post)[3]
-  } else {
-    NULL
-  }
+    if(fit_test){
+      y_test_for <- matrix(0,nrow = nrow(x_test),ncol = ncol(y_mat))
+    }
 
-  sigmas_mean <- sqrt(diag(Sigma_post_mean))
+    if(scale_y){
 
-  # Transforming to classification context
+      # Re-scaling Sigma_all, important to cover convergence issues.
+      for(k in 1:(dim(all_Sigma_post)[3])){
+        all_Sigma_post[,,k] <- crossprod(Sigma_scale,tcrossprod(all_Sigma_post[,,k],Sigma_scale))
 
-  # Getting the list of outcomes
-  if(class_model){
+      }
 
-    # Calculate the ESS for all parameters throw a warning if any of them is smaller than half of the MCMC samples
-    if(diagnostic){
+      for(i in 1:(dim(Sigma_post)[3])){
+        Sigma_post[,,i] <- crossprod(Sigma_scale,tcrossprod(Sigma_post[,,i],Sigma_scale))
+        Sigma_for <- Sigma_for +  Sigma_post[,,i]
+        for( jj in 1:NCOL(y_mat)){
+          y_train_for[,jj] <- y_train_for[,jj] + unnormalize_bart(z = y_train_post[,jj,i],a = min_y[jj],b = max_y[jj])
 
-      diagnostic_bool = FALSE
-      ESS_val <- matrix(NA, nrow = nrow(Sigma_post), ncol = ncol(Sigma_post))
-      ESS_warn <- FALSE
-      for(i in 1:nrow(Sigma_post)){
-        # ESS_val[i,i] <- ESS(x = Sigma_post[i,i,]) # For classification there's no sample
-        j = i
-        while(j < nrow(Sigma_post)){
-          j = j+1
-          ESS_val[i,j] <- ESS_val[j,i] <- ESS(x = Sigma_post[i,j,]/(sqrt(Sigma_post[i,i,])*sqrt(Sigma_post[j,j,])))
-          if(ESS_val[i,j]<round((n_mcmc-n_burn)/2,digits = 0)){
-            ESS_warn <- TRUE
+          if(fit_test){
+            y_test_for[,jj] <- y_test_for[,jj] +  unnormalize_bart(z = y_test_post[,jj,i],a = min_y[jj],b = max_y[jj])
+            y_test_post[,jj,i] <-  unnormalize_bart(z = y_test_post[,jj,i],a = min_y[jj],b = max_y[jj])
+          }
+
+          y_train_post[,jj,i] <- unnormalize_bart(z = y_train_post[,jj,i],a = min_y[jj],b = max_y[jj])
+          if(na_boolean){
+            y_mat_post[,jj,i] <- unnormalize_bart(z = y_mat_post[,jj,i],a = min_y[jj],b = max_y[jj])
           }
         }
       }
-
     } else {
-      ESS_val <- NULL
+      for(i in 1:(dim(Sigma_post)[3])){
+        Sigma_for <- Sigma_for + Sigma_post[,,i]
+        y_train_for <- y_train_for +  y_train_post[,,i]
+        if(fit_test){
+          y_test_for <- y_test_for +  y_test_post[,,i]
+        }
+
+      }
     }
 
-    if(ESS_warn){
-      warning(paste0("A ESS less than ",round((n_mcmc-n_burn)/2,digits = 0)," was obtanied. Verify the traceplots and adjust the priors to improve the sampling."))
+
+    Sigma_post_mean <- Sigma_for/dim(Sigma_post)[3]
+    y_mat_mean <- y_train_for/dim(y_train_post)[3]
+
+    y_mat_test_mean <- if(fit_test){
+      y_test_for/dim(y_test_post)[3]
+    } else {
+      NULL
     }
 
+    sigmas_mean <- sqrt(diag(Sigma_post_mean))
 
+    # Transforming to classification context
 
+    # Getting the list of outcomes
+    if(class_model){
 
-    list_obj_ <- list(y_hat = y_train_post,
-                      y_hat_test = y_test_post,
-                      y_hat_mean = y_mat_mean,
-                      y_hat_test_mean = y_mat_test_mean,
-                      y_hat_mean_class = apply(y_mat_mean,2,function(x){ifelse(x>0,1,0)}),
-                      y_hat_test_mean_class = apply(y_mat_test_mean,2,function(x){ifelse(x>0,1,0)}),
-                      Sigma_post = Sigma_post,
-                      Sigma_post_mean = Sigma_post_mean,
-                      sigmas_post = bart_obj[[7]],
-                      all_Sigma_post = all_Sigma_post,
-                      var_importance = var_importance,
-                      var_importance_raw = var_importance_raw,
-                      prior = list(n_tree = n_tree,
-                                   alpha = alpha,
-                                   beta = beta,
-                                   tau_mu_j = tau_mu_j,
-                                   mu_init = mu_init,
-                                   tree_proposal = bart_obj[[5]],
-                                   tree_acceptance = bart_obj[[6]]),
-                      mcmc = list(n_mcmc = n_mcmc,
-                                  n_burn = n_burn),
-                      data = list(x_train = x_train,
-                                  y_mat = y_mat,
-                                  x_test = x_test),
-                      ESS = ESS_val)
+      # Calculate the ESS for all parameters throw a warning if any of them is smaller than half of the MCMC samples
+      if(diagnostic){
 
-    class(list_obj_) <- "subart-probit"
-
-  } else {
-
-
-    # Calculate the ESS for all parameters throw a warning if any of them is smaller than half of the MCMC samples
-    if(diagnostic){
-
-      diagnostic_bool = FALSE
-      ESS_val <- matrix(NA, nrow = nrow(Sigma_post), ncol = ncol(Sigma_post))
-      ESS_warn <- FALSE
-      for(i in 1:nrow(Sigma_post)){
-        ESS_val[i,i] <- ESS(x = sqrt(Sigma_post[i,i,]))
-        j = i
-        while(j < nrow(Sigma_post)){
-          j = j+1
-          ESS_val[i,j] <- ESS_val[j,i] <- ESS(x = Sigma_post[i,j,]/(sqrt(Sigma_post[i,i,])*sqrt(Sigma_post[j,j,])))
-          if(ESS_val[i,j]<round((n_mcmc-n_burn)/2,digits = 0)){
-            ESS_warn <- TRUE
+        diagnostic_bool = FALSE
+        ESS_val <- matrix(NA, nrow = nrow(Sigma_post), ncol = ncol(Sigma_post))
+        ESS_warn <- FALSE
+        for(i in 1:nrow(Sigma_post)){
+          # ESS_val[i,i] <- ESS(x = Sigma_post[i,i,]) # For classification there's no sample
+          j = i
+          while(j < nrow(Sigma_post)){
+            j = j+1
+            ESS_val[i,j] <- ESS_val[j,i] <- ESS(x = Sigma_post[i,j,]/(sqrt(Sigma_post[i,i,])*sqrt(Sigma_post[j,j,])))
+            if(ESS_val[i,j]<round((n_mcmc-n_burn)/2,digits = 0)){
+              ESS_warn <- TRUE
+            }
           }
         }
+
+      } else {
+        ESS_val <- NULL
       }
 
+      if(ESS_warn){
+        warning(paste0("A ESS less than ",round((n_mcmc-n_burn)/2,digits = 0)," was obtanied. Verify the traceplots and adjust the priors to improve the sampling."))
+      }
+
+
+
+
+      list_obj_ <- list(y_hat = y_train_post,
+                        y_hat_test = y_test_post,
+                        y_hat_mean = y_mat_mean,
+                        y_hat_test_mean = y_mat_test_mean,
+                        y_hat_mean_class = apply(y_mat_mean,2,function(x){ifelse(x>0,1,0)}),
+                        y_hat_test_mean_class = apply(y_mat_test_mean,2,function(x){ifelse(x>0,1,0)}),
+                        Sigma_post = Sigma_post,
+                        Sigma_post_mean = Sigma_post_mean,
+                        sigmas_post = bart_obj[[7]],
+                        all_Sigma_post = all_Sigma_post,
+                        var_importance = var_importance,
+                        var_importance_raw = var_importance_raw,
+                        prior = list(n_tree = n_tree,
+                                     alpha = alpha,
+                                     beta = beta,
+                                     tau_mu_j = tau_mu_j,
+                                     mu_init = mu_init,
+                                     tree_proposal = bart_obj[[5]],
+                                     tree_acceptance = bart_obj[[6]]),
+                        mcmc = list(n_mcmc = n_mcmc,
+                                    n_burn = n_burn),
+                        data = list(x_train = x_train,
+                                    y_mat = y_mat,
+                                    x_test = x_test),
+                        ESS = ESS_val)
+
+      class(list_obj_) <- "subart-probit"
+
     } else {
-      ESS_val <- NULL
+
+
+      # Calculate the ESS for all parameters throw a warning if any of them is smaller than half of the MCMC samples
+      if(diagnostic){
+
+        diagnostic_bool = FALSE
+        ESS_val <- matrix(NA, nrow = nrow(Sigma_post), ncol = ncol(Sigma_post))
+        ESS_warn <- FALSE
+        for(i in 1:nrow(Sigma_post)){
+          ESS_val[i,i] <- ESS(x = sqrt(Sigma_post[i,i,]))
+          j = i
+          while(j < nrow(Sigma_post)){
+            j = j+1
+            ESS_val[i,j] <- ESS_val[j,i] <- ESS(x = Sigma_post[i,j,]/(sqrt(Sigma_post[i,i,])*sqrt(Sigma_post[j,j,])))
+            if(ESS_val[i,j]<round((n_mcmc-n_burn)/2,digits = 0)){
+              ESS_warn <- TRUE
+            }
+          }
+        }
+
+      } else {
+        ESS_val <- NULL
+      }
+
+      if(ESS_warn){
+        warning(paste0("A ESS less than ",round((n_mcmc-n_burn)/2,digits = 0)," was obtanied. Verify the traceplots and adjust the priors to improve the sampling."))
+      }
+
+
+      # Returning the data list
+      data_list <- if(na_boolean){
+        list(x_train = x_train,
+             y_mat = y_mat,
+             x_test = x_test,
+             y_mat_post = y_mat_post)
+      } else {
+        list(x_train = x_train,
+             y_mat = y_mat,
+             x_test = x_test)
+      }
+
+      list_obj_ <- list(y_hat = y_train_post,
+                        y_hat_test = y_test_post,
+                        y_hat_mean = y_mat_mean,
+                        y_hat_test_mean = y_mat_test_mean,
+                        Sigma_post = Sigma_post,
+                        Sigma_post_mean = Sigma_post_mean,
+                        sigmas_mean = sigmas_mean,
+                        all_Sigma_post = all_Sigma_post,
+                        prior = list(n_tree = n_tree,
+                                     alpha = alpha,
+                                     beta = beta,
+                                     tau_mu_j = tau_mu_j,
+                                     df = df,
+                                     A_j = A_j,
+                                     mu_init = mu_init),
+                        mcmc = list(n_mcmc = n_mcmc,
+                                    n_burn = n_burn),
+                        data = data_list,
+                        ESS = ESS_val)
+
+      class(list_obj_) <- "subart"
     }
 
-    if(ESS_warn){
-      warning(paste0("A ESS less than ",round((n_mcmc-n_burn)/2,digits = 0)," was obtanied. Verify the traceplots and adjust the priors to improve the sampling."))
-    }
-
-
-    # Returning the data list
-    data_list <- if(na_boolean){
-      list(x_train = x_train,
-           y_mat = y_mat,
-           x_test = x_test,
-           y_mat_post = y_mat_post)
-    } else {
-      list(x_train = x_train,
-           y_mat = y_mat,
-           x_test = x_test)
-    }
-
-    list_obj_ <- list(y_hat = y_train_post,
-                      y_hat_test = y_test_post,
-                      y_hat_mean = y_mat_mean,
-                      y_hat_test_mean = y_mat_test_mean,
-                      Sigma_post = Sigma_post,
-                      Sigma_post_mean = Sigma_post_mean,
-                      sigmas_mean = sigmas_mean,
-                      all_Sigma_post = all_Sigma_post,
-                      prior = list(n_tree = n_tree,
-                                   alpha = alpha,
-                                   beta = beta,
-                                   tau_mu_j = tau_mu_j,
-                                   df = df,
-                                   A_j = A_j,
-                                   mu_init = mu_init),
-                      mcmc = list(n_mcmc = n_mcmc,
-                                  n_burn = n_burn),
-                      data = data_list,
-                      ESS = ESS_val)
-
-    class(list_obj_) <- "subart"
   }
+
 
   # Return the list with all objects and parameters
   return(list_obj_)
