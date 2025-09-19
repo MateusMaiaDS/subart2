@@ -14,4 +14,14 @@ void update_a_j(modelParam &data);
 void updateSigma(arma::mat &f_sum_trees,modelParam &data);
 void update_y_mat_missing(modelParam & data,arma::mat &y_mat_hat,arma::mat &na_indicators, unsigned int ii);
 
+// Univariate functions
+void update_mu_and_predictions_uni(Node* tree,
+                               modelParam_uni &data,
+                               arma::mat &trees_fit_store,
+                               arma::mat &trees_fit_store_test,
+                               unsigned int &t);
+void updateSigma_uni(arma::vec &f_sum_trees,modelParam_uni &data);
+void update_a_j_uni(modelParam_uni &data);
+
+
 #endif

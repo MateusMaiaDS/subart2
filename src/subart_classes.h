@@ -87,7 +87,7 @@ struct modelParam {
 struct modelParam_uni {
 
   arma::mat x_train;
-  arma::mat y_mat;
+  arma::vec y;
   arma::mat x_test;
   arma::mat xcut;
 
@@ -97,7 +97,6 @@ struct modelParam_uni {
   arma::uvec init_train_index;
   arma::uvec init_test_index;
 
-  unsigned int d;
   unsigned int p;
 
   // BART prior param specification
@@ -105,14 +104,10 @@ struct modelParam_uni {
   unsigned int d_var; // Dimension of variables in my base
   double alpha;
   double beta;
-  arma::vec sigma_mu;
-  arma::mat Sigma;
-  arma::mat S_0_wish;
-  arma::vec a_j_vec;
-  arma::vec A_j_vec;
-  arma::mat W;
-  arma::mat R;
-  arma::mat D;
+  double S_0;
+  double a_j;
+  double A_j;
+
 
   double nu;
   int node_min_size;
@@ -130,9 +125,12 @@ struct modelParam_uni {
   bool categorical_indicators_bool;
 
   // Elements to be used in the loglikelihood update and mu update
-  double v_j;
-  double sigma_mu_j;
-  double sigma_mu_j_sq;
+  double sigma_sq;
+  double sigma_mu;
+  double sigma_mu_sq;
+
+  // Creating a boolean to know if will fit the test or not
+  bool fit_test;
 
   // Defining the constructor for the model param
   modelParam_uni(arma::mat x_train_,
@@ -144,13 +142,14 @@ struct modelParam_uni {
                  double alpha_,
                  double beta_,
                  double nu_,
-                 arma::vec sigma_mu_,
-                 arma::mat Sigma_,
-                 arma::mat S_0_wish_,
-                 arma::vec A_j_vec_,
+                 double sigma_mu_,
+                 double sigma_,
+                 double S_0_,
+                 double A_j_,
                  double n_mcmc_,
                  double n_burn_,
-                 arma::uvec categorical_indicators_);
+                 arma::uvec categorical_indicators_,
+                 bool fit_test_);
 
 };
 
@@ -189,10 +188,25 @@ struct Node {
   unsigned int n_leaf = 0;
   unsigned int n_leaf_test = 0;
 
+
   // Creating the methods
   void addingLeaves();
   void deletingLeaves();
-  void Stump(modelParam& data);
+  template <typename T>
+  void Stump(T& data){
+
+    left = this;
+    right = this;
+    parent = this;
+
+    n_leaf = data.n;
+    n_leaf_test = data.n_test;
+    train_index = data.init_train_index;
+    test_index = data.init_test_index;
+
+    return;
+  }
+
   void updateWeight(const arma::mat X, int i);
   void getLimits(unsigned int split_var_candidate,
                  double &lower_candidate,
@@ -203,8 +217,10 @@ struct Node {
   // void prune(Node* tree, modelParam &data, arma::vec&curr_res, arma::vec &curr_u,unsigned int &j);
   // void change(Node* tree, modelParam &data, arma::vec&curr_res, arma::vec &curr_u,unsigned int &j);
   void nodeLogLike(modelParam &data, unsigned int &j);
+  void nodeLogLike_uni(modelParam_uni &data);
+
   void updateResiduals(modelParam& data, arma::vec &curr_res, arma::vec &curr_u, unsigned int &j);
-  void updateResiduals_uni(modelParam& data, arma::vec &curr_res, unsigned int &j);
+  void updateResiduals_uni(modelParam_uni& data, arma::vec &curr_res);
   void displayCurrNode();
 
   Node();

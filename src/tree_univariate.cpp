@@ -1,162 +1,40 @@
 #include <RcppArmadillo.h>
 #include "subart_classes.h"
+#include "tree.h"
+#include "tree_univariate.h"
 
 
-
-// Getting the leaves (this is the function that gonna do the recursion the
-//                      function below is the one that gonna initialise it)
-void get_leaves(Node* x,  std::vector<Node*> &leaves_vec) {
-
-  if(x->isLeaf){
-    leaves_vec.push_back(x);
-  } else {
-    get_leaves(x->left, leaves_vec);
-    get_leaves(x->right,leaves_vec);
-  }
-
-  return;
-
-}
-
-// Sweeping the trees looking for nogs
-void get_nogs(Node* node,std::vector<Node*>& nogs){
-
-  if(!node->isLeaf){
-    bool bool_left_is_leaf = node->left->isLeaf;
-    bool bool_right_is_leaf = node->right->isLeaf;
-
-    // Checking if the current one is a NOGs
-    if(bool_left_is_leaf && bool_right_is_leaf){
-      nogs.push_back(node);
-    } else { // Keep looking for other NOGs
-      get_nogs(node->left,nogs);
-      get_nogs(node->right,nogs);
-    }
-  }
-  return;
-}
 
 // Calculating the Loglilelihood of a node
-void Node::updateResiduals(modelParam& data,
-                           arma::vec &curr_res,
-                           arma::vec &curr_u,
-                           unsigned int &j){
-
+void Node::updateResiduals_uni(modelParam_uni& data,
+                           arma::vec &curr_res){
 
   r_sum = 0.0;
-  u_sum = 0.0;
 
   // Train elements
   for(auto id:train_index){
     r_sum = r_sum + curr_res.at(id);
-    u_sum = u_sum + curr_u.at(id);
   }
 
-  Gamma_j  = n_leaf+data.v_j/data.sigma_mu_j_sq.at(j);
-  S_j = r_sum-u_sum;
+  Gamma_j  = n_leaf+data.sigma_sq/data.sigma_mu;
+  S_j = r_sum;
 
   return;
 
 }
 
-void Node::nodeLogLike(modelParam& data, unsigned int& j){
+void Node::nodeLogLike_uni(modelParam_uni& data){
 
   // Getting the log-likelihood;
-  log_likelihood = -0.5*log(2*arma::datum::pi*data.sigma_mu_j_sq.at(j))+0.5*log(data.v_j/Gamma_j) +0.5*(S_j*S_j)/(data.v_j*Gamma_j);
+  log_likelihood = -0.5*log(2*arma::datum::pi*data.sigma_mu_sq)+0.5*log(data.sigma_sq/Gamma_j) +0.5*(S_j*S_j)/(data.sigma_sq*Gamma_j);
   return;
 
 }
 
-void Node::addingLeaves(){
 
-  // Create the two new nodes
-  left = new Node(); // Creating a new vector object to the
-  right = new Node();
-  isLeaf = false;
-
-  // Modifying the left node
-  left -> isRoot = false;
-  left -> isLeaf = true;
-  left -> left = left;
-  left -> right = left;
-  left -> parent = this;
-  left -> depth = depth+1;
-
-  right -> isRoot = false;
-  right -> isLeaf = true;
-  right -> left = right; // Recall that you are saving the address of the right node.
-  right -> right = right;
-  right -> parent = this;
-  right -> depth = depth+1;
-
-
-  return;
-}
-
-
-void Node::deletingLeaves(){
-
-  // Deleting
-  delete left; // This release the memory from the left point
-  delete right; // This release the memory from the right point
-  left = this;  // The new pointer for the left become the node itself
-  right = this; // The new pointer for the right become the node itself
-  isLeaf = true;
-
-  return;
-
-}
-
-void Node::getLimits(unsigned int split_var_candidate,
-                      double &lower_candidate,
-                      double &upper_candidate){
-
-  Node* dummy_node = this;
-  lower_candidate = 0.0;
-  upper_candidate = 1.0;
-
-  bool node_bool = dummy_node->isRoot ? false : true;
-  while(node_bool) {
-
-    bool is_left = dummy_node->isLeft();
-    dummy_node = dummy_node->parent;
-    node_bool = dummy_node->isRoot ? false : true;
-
-    if(dummy_node->var_split == split_var_candidate){
-      node_bool = false; // This is false because all the other parents from it will already carry the information from lower and upper from previous nodes
-
-      if(is_left){
-        upper = dummy_node->var_split_rule; //This is simple, think about a simple tree wiht two nodes, if the rule from the parent is x_{1}<5, and we are trying to grow its children, if the left node all values should be already below to 5
-        lower = dummy_node->lower;
-      }  else {
-        upper = dummy_node->upper;
-        lower = dummy_node->var_split_rule;// Same logic as before, as all values are above 5 the lower limit become its value
-      }
-    }
-  }
-
-}
-
-double sample_split_var_rule_from_xcut(arma::vec& xcut_col, double lower_candidate, double upper_candidate) {
-  const double* start = std::lower_bound(xcut_col.begin(), xcut_col.end(), lower_candidate + std::numeric_limits<double>::epsilon());
-  const double* end = std::lower_bound(xcut_col.begin(), xcut_col.end(), upper_candidate);
-
-  arma::uword length = end - start;
-
-  if (length == 0) {
-    return -1.0; // No value in range
-  }
-
-  // Uniform discrete sampling: generate an index in [0, length-1]
-  arma::uword random_index = arma::randi<arma::uword>(arma::distr_param(0, length - 1));
-  return *(start + random_index);
-}
-
-void grow(Node *tree,
-          modelParam &data,
-          arma::vec &curr_res,
-          arma::vec &curr_u,
-          unsigned int &j){
+void grow_uni(Node *tree,
+          modelParam_uni &data,
+          arma::vec &curr_res){
 
 
   // Getting the number of terminal nodes
@@ -177,7 +55,7 @@ void grow(Node *tree,
   }
 
   for(auto& leaf:t_nodes){
-    leaf->updateResiduals(data,curr_res,curr_u,j);
+    leaf->updateResiduals_uni(data,curr_res);
   }
 
   // Residuals already updted, if the selected g_node only have 2/less observations there's no point of growing it
@@ -262,20 +140,19 @@ void grow(Node *tree,
 
 
   // Updating other sufficientStatistics;
-  double vj_divided_sigma_mu_j = data.v_j/data.sigma_mu_j_sq[j];
-  Gamma_j_left = left_id_counter+vj_divided_sigma_mu_j;
+  Gamma_j_left = left_id_counter+data.sigma_sq/data.sigma_mu_sq;
   S_j_left = r_sum_left-u_sum_left;
 
-  Gamma_j_right = right_id_counter+vj_divided_sigma_mu_j;
+  Gamma_j_right = right_id_counter+data.sigma_sq/data.sigma_mu_sq;
   S_j_right = r_sum_right-u_sum_right;
 
 
   // Calculate sufficient statistics for the left and right node outside the UpdateResiduals function.
 
-  double new_tree_log_likelihood_ratio = -0.5*log(2*arma::datum::pi*data.sigma_mu_j_sq[j])+0.5*log(data.v_j)+ // Remaninig from the operation like_left_node + like_right_node - like_g_node
-                                       (-0.5*log(Gamma_j_left) + 0.5*(S_j_left*S_j_left)/(data.v_j*Gamma_j_left)) + // Core of the likelihood of the left node
-                                       (-0.5*log(Gamma_j_right) + 0.5*(S_j_right*S_j_right)/(data.v_j*Gamma_j_right))- // Core of the likelihood of the left node
-                                       (-0.5*log(g_node->Gamma_j) + 0.5*(g_node->S_j*g_node->S_j)/(data.v_j*g_node->Gamma_j)); // Core of the likelihood for the grown node
+  double new_tree_log_likelihood_ratio = -0.5*log(2*arma::datum::pi*data.sigma_mu_sq)+0.5*log(data.sigma_sq)+ // Remaninig from the operation like_left_node + like_right_node - like_g_node
+    (-0.5*log(Gamma_j_left) + 0.5*(S_j_left*S_j_left)/(data.sigma_sq*Gamma_j_left)) + // Core of the likelihood of the left node
+    (-0.5*log(Gamma_j_right) + 0.5*(S_j_right*S_j_right)/(data.sigma_sq*Gamma_j_right))- // Core of the likelihood of the left node
+    (-0.5*log(g_node->Gamma_j) + 0.5*(g_node->S_j*g_node->S_j)/(data.sigma_sq*g_node->Gamma_j)); // Core of the likelihood for the grown node
 
   // Reminder the node_log_likelihood is:
   // node->log_likelihood = -0.5*log(2*arma::datum::pi*sigma_mu_j_sq[j])+0.5*log(data.v_j/node->Gamma_j) +0.5*(S_j*S_j)/(data.v_j*node->Gamma_j);
@@ -322,33 +199,33 @@ void grow(Node *tree,
 
     if(data.fit_test){
 
-        // Assigned left and right for the current train index
-        arma::uvec left_id_test = g_node->test_index;
-        arma::uvec right_id_test  = g_node->test_index;
-        unsigned int left_id_counter_test = 0;
-        unsigned int right_id_counter_test = 0;
+      // Assigned left and right for the current train index
+      arma::uvec left_id_test = g_node->test_index;
+      arma::uvec right_id_test  = g_node->test_index;
+      unsigned int left_id_counter_test = 0;
+      unsigned int right_id_counter_test = 0;
 
-        for(auto& id_test:g_node->test_index){
+      for(auto& id_test:g_node->test_index){
 
-            // Here I will update the r_sum and u_sum to avoid to go over through the same iterations when doing left->updateResiduals()
-            if(data.x_test.at(id_test,var_split_candidate) <= var_split_rule_candidate ){
+        // Here I will update the r_sum and u_sum to avoid to go over through the same iterations when doing left->updateResiduals()
+        if(data.x_test.at(id_test,var_split_candidate) <= var_split_rule_candidate ){
 
-              left_id_test[left_id_counter_test] = id_test;
-              left_id_counter_test++;
-            } else {
+          left_id_test[left_id_counter_test] = id_test;
+          left_id_counter_test++;
+        } else {
 
-              right_id_test[right_id_counter_test] = id_test;
-              right_id_counter_test++;
-
-            }
+          right_id_test[right_id_counter_test] = id_test;
+          right_id_counter_test++;
 
         }
 
-        left_id_test.resize(left_id_counter_test); // Maybe in a future think a way of using arma::set_size? which is much faster
-        right_id_test.resize(right_id_counter_test); // Maybe in the future thinkk in a way of us arma::set_size? which is much faster
+      }
 
-        g_node->left->test_index = left_id_test;
-        g_node->right->test_index = right_id_test;
+      left_id_test.resize(left_id_counter_test); // Maybe in a future think a way of using arma::set_size? which is much faster
+      right_id_test.resize(right_id_counter_test); // Maybe in the future thinkk in a way of us arma::set_size? which is much faster
+
+      g_node->left->test_index = left_id_test;
+      g_node->right->test_index = right_id_test;
 
     }
 
@@ -364,11 +241,9 @@ void grow(Node *tree,
 
 }
 
-void prune(Node *tree,
-          modelParam &data,
-          arma::vec &curr_res,
-          arma::vec &curr_u,
-          unsigned int &j){
+void prune_uni(Node *tree,
+           modelParam_uni &data,
+           arma::vec &curr_res){
 
 
   // Getting the number of terminal nodes
@@ -390,17 +265,15 @@ void prune(Node *tree,
   }
 
   for(auto& leaf:t_nodes){
-    leaf->updateResiduals(data,curr_res,curr_u,j);
+    leaf->updateResiduals_uni(data,curr_res);
   }
 
 
   // Calculating the likelhood for the node selected to be grown
   double r_sum = 0.0;
-  double u_sum = 0.0;
 
   for(auto& id:p_node->train_index){
     r_sum = r_sum + curr_res[id];
-    u_sum = u_sum + curr_res[id];
   }
 
 
@@ -409,15 +282,15 @@ void prune(Node *tree,
   double p_S_j;
 
   // Updating other sufficientStatistics;
-  p_Gamma_j = p_node->n_leaf+data.v_j/data.sigma_mu_j_sq[j];
-  p_S_j = r_sum-u_sum;
+  p_Gamma_j = p_node->n_leaf+data.sigma_sq/data.sigma_mu_sq;
+  p_S_j = r_sum;
 
   // Calculate sufficient statistics for the left and right node outside the UpdateResiduals function.
 
-  double new_tree_log_likelihood_ratio = 0.5*log(2*arma::datum::pi*data.sigma_mu_j_sq[j])-0.5*log(data.v_j)+ // Remaninig from the operation  like_g_node - (like_left_node + like_right_node -)
-    (-0.5*log(p_Gamma_j) + 0.5*(p_S_j*p_S_j)/(data.v_j*p_Gamma_j))- // Core of the likelihood for the prune node
-    (-0.5*log(p_node->left->Gamma_j) + 0.5*(p_node->left->S_j*p_node->left->S_j)/(data.v_j*p_node->left->Gamma_j)) - // Core of the likelihood of the left node
-    (-0.5*log(p_node->right->Gamma_j) + 0.5*(p_node->right->S_j*p_node->right->S_j)/(data.v_j*p_node->right->Gamma_j)); // Core of the likelihood of the left node
+  double new_tree_log_likelihood_ratio = 0.5*log(2*arma::datum::pi*data.sigma_mu_sq)-0.5*log(data.sigma_sq)+ // Remaninig from the operation  like_g_node - (like_left_node + like_right_node -)
+    (-0.5*log(p_Gamma_j) + 0.5*(p_S_j*p_S_j)/(data.sigma_sq*p_Gamma_j))- // Core of the likelihood for the prune node
+    (-0.5*log(p_node->left->Gamma_j) + 0.5*(p_node->left->S_j*p_node->left->S_j)/(data.sigma_sq*p_node->left->Gamma_j)) - // Core of the likelihood of the left node
+    (-0.5*log(p_node->right->Gamma_j) + 0.5*(p_node->right->S_j*p_node->right->S_j)/(data.sigma_sq*p_node->right->Gamma_j)); // Core of the likelihood of the left node
 
   // Reminder the node_log_likelihood is:
   // node->log_likelihood = -0.5*log(2*arma::datum::pi*sigma_mu_j_sq[j])+0.5*log(data.v_j/node->Gamma_j) +0.5*(S_j*S_j)/(data.v_j*node->Gamma_j);
@@ -442,8 +315,6 @@ void prune(Node *tree,
     p_node->Gamma_j = p_Gamma_j;
     p_node->deletingLeaves();
 
-
-
   } else {
 
     // Not need to modify anything all the nodes are already updated
@@ -457,11 +328,9 @@ void prune(Node *tree,
 
 
 
-void change(Node *tree,
-          modelParam &data,
-          arma::vec &curr_res,
-          arma::vec &curr_u,
-          unsigned int &j){
+void change_uni(Node *tree,
+            modelParam_uni &data,
+            arma::vec &curr_res){
 
 
   // Getting the number of terminal nodes
@@ -482,7 +351,7 @@ void change(Node *tree,
   }
 
   for(auto& leaf:t_nodes){
-    leaf->updateResiduals(data,curr_res,curr_u,j);
+    leaf->updateResiduals_uni(data,curr_res);
   }
 
 
@@ -563,19 +432,20 @@ void change(Node *tree,
 
 
   // Updating other sufficientStatistics;
-  Gamma_j_left = left_id_counter+data.v_j/data.sigma_mu_j_sq[j];
-  S_j_left = r_sum_left-u_sum_left;
+  double sigma_sq_divided_sigma_mu_sq = data.sigma_sq/data.sigma_mu_sq;
+  Gamma_j_left = left_id_counter+sigma_sq_divided_sigma_mu_sq;
+  S_j_left = r_sum_left;
 
-  Gamma_j_right = right_id_counter+data.v_j/data.sigma_mu_j_sq[j];
-  S_j_right = r_sum_right-u_sum_right;
+  Gamma_j_right = right_id_counter+sigma_sq_divided_sigma_mu_sq;
+  S_j_right = r_sum_right;
 
 
   // Calculate sufficient statistics for the left and right node outside the UpdateResiduals function.
 
-  double new_tree_log_likelihood_ratio = (-0.5*log(Gamma_j_left) + 0.5*(S_j_left*S_j_left)/(data.v_j*Gamma_j_left)) + // Core of the likelihood of the left node
-    (-0.5*log(Gamma_j_right) + 0.5*(S_j_right*S_j_right)/(data.v_j*Gamma_j_right))- // Core of the likelihood of the left node
-    (-0.5*log(c_node->left->Gamma_j) + 0.5*(c_node->left->S_j*c_node->left->S_j)/(data.v_j*c_node->left->Gamma_j)) -
-    (-0.5*log(c_node->right->Gamma_j) + 0.5*(c_node->right->S_j*c_node->right->S_j)/(data.v_j*c_node->right->Gamma_j)) ; // Core of the current left node
+  double new_tree_log_likelihood_ratio = (-0.5*log(Gamma_j_left) + 0.5*(S_j_left*S_j_left)/(data.sigma_sq*Gamma_j_left)) + // Core of the likelihood of the left node
+    (-0.5*log(Gamma_j_right) + 0.5*(S_j_right*S_j_right)/(data.sigma_sq*Gamma_j_right))- // Core of the likelihood of the left node
+    (-0.5*log(c_node->left->Gamma_j) + 0.5*(c_node->left->S_j*c_node->left->S_j)/(data.sigma_sq*c_node->left->Gamma_j)) -
+    (-0.5*log(c_node->right->Gamma_j) + 0.5*(c_node->right->S_j*c_node->right->S_j)/(data.sigma_sq*c_node->right->Gamma_j)) ; // Core of the current left node
 
 
   // Reminder the node_log_likelihood is:

@@ -122,7 +122,7 @@ modelParam::modelParam(arma::mat x_train_,
 
 // Initialising the model Param
 modelParam_uni::modelParam_uni(arma::mat x_train_,
-                       arma::vec y_mat_,
+                       arma::vec y_,
                        arma::mat x_test_,
                        arma::mat x_cut_,
                        unsigned int n_tree_,
@@ -130,26 +130,40 @@ modelParam_uni::modelParam_uni(arma::mat x_train_,
                        double alpha_,
                        double beta_,
                        double nu_,
-                       arma::vec sigma_mu_,
-                       arma::mat Sigma_,
-                       arma::mat S_0_wish_,
-                       arma::vec A_j_vec_,
+                       double sigma_mu_,
+                       double sigma_,
+                       double S_0_,
+                       double A_j_,
                        double n_mcmc_,
                        double n_burn_,
-                       arma::uvec categorical_indicators_){
+                       arma::uvec categorical_indicators_,
+                       bool fit_test_){
 
 
   // Assign the variables
   x_train = x_train_;
-  y_mat = y_mat_;
+  y = y_;
   x_test = x_test_;
   xcut = x_cut_;
 
-  n = x_train_.n_rows; // Converting uword to unsigned int; see if isn't a problme in the future
-  n_test = x_test_.n_rows; // Converting uword to unsigned int; see if isn't a problme in the future
+  n = x_train_.n_rows; // Converting uword to unsigned int; see if isn't a problem in the future
+  n_test = x_test_.n_rows; // Converting uword to unsigned int; see if isn't a problem in the future
 
-  d = y_mat.n_cols;
   p = x_train.n_cols;
+
+  p = x_train.n_cols;
+
+  init_train_index = arma::uvec(n);
+  init_test_index = arma::uvec(n_test);
+
+  for(unsigned int i = 0; i<n; i++){
+    init_train_index[i] = i;
+  }
+
+  for(unsigned int i = 0; i<n_test; i++){
+    init_test_index[i] = i;
+  }
+
 
   n_tree = n_tree_;
   node_min_size = node_min_size_;
@@ -157,21 +171,15 @@ modelParam_uni::modelParam_uni(arma::mat x_train_,
   beta = beta_;
   nu = nu_;
   sigma_mu = sigma_mu_;
+  sigma_mu_sq = sigma_mu*sigma_mu;
 
-  Sigma = Sigma_;
-  S_0_wish = S_0_wish_;
-  A_j_vec = A_j_vec_;
-  a_j_vec = arma::vec(d);
+  sigma_sq = sigma_*sigma_;
+  S_0 = S_0_;
+  A_j = A_j_;
+  a_j = 0.0;
   n_mcmc = n_mcmc_;
   n_burn = n_burn_;
 
-
-  // Generating the elements for the correlation matrix
-  R = Sigma_;
-  D = arma::mat(d,d); // There is more efficient way to declare the diagonal matrix without using arma::eye?
-  for(arma::uword i = 0; i<d;i++){
-    D.at(i,i) = 1.0;
-  }
   // Grow acceptation ratio
   move_proposal = arma::vec(3);
   move_acceptance = arma::vec(3);
