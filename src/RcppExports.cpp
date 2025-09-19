@@ -160,6 +160,19 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// unnormalize_bart_matrix
+NumericMatrix unnormalize_bart_matrix(const NumericMatrix& Z, double a, double b);
+RcppExport SEXP _subart2_unnormalize_bart_matrix(SEXP ZSEXP, SEXP aSEXP, SEXP bSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const NumericMatrix& >::type Z(ZSEXP);
+    Rcpp::traits::input_parameter< double >::type a(aSEXP);
+    Rcpp::traits::input_parameter< double >::type b(bSEXP);
+    rcpp_result_gen = Rcpp::wrap(unnormalize_bart_matrix(Z, a, b));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_subart2_cppsubart", (DL_FUNC) &_subart2_cppsubart, 19},
@@ -167,6 +180,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_subart2_cppsubart_missing", (DL_FUNC) &_subart2_cppsubart_missing, 21},
     {"_subart2_cppsubart_missing_2d", (DL_FUNC) &_subart2_cppsubart_missing_2d, 21},
     {"_subart2_cppsubart_univariate", (DL_FUNC) &_subart2_cppsubart_univariate, 19},
+    {"_subart2_unnormalize_bart_matrix", (DL_FUNC) &_subart2_unnormalize_bart_matrix, 3},
     {NULL, NULL, 0}
 };
 

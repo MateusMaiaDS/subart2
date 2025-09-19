@@ -118,7 +118,6 @@ subart <- function(x_train,
   # Getting the valid
   dummy_x <- base_dummyVars(x_train)
 
-  # Create a data.frame aux
 
   # Create a data.frame aux
   initial_rank <- FALSE
@@ -380,8 +379,9 @@ subart <- function(x_train,
     if(ncol(y_mat_scale)==1){ # For the univariate case
 
       na_boolean <- FALSE
+
       bart_obj <- cppsubart_univariate(x_train_scale,
-                                     y_mat_scale,
+                                       c(y_mat_scale),
                                      x_test_scale,
                                      xcut_m,
                                      n_tree,
@@ -524,56 +524,32 @@ subart <- function(x_train,
   if(ncol(y_mat)==1){
 
     # Getting the mean values for the Sigma and \y_hat and \y_hat_test
-    Sigma_for <- matrix(0,nrow = nrow(Sigma_post), ncol = ncol(Sigma_post))
-    y_train_for <- matrix(0,nrow = nrow(y_mat),ncol = ncol(y_mat))
+    y_train_for <- numeric(nrow(y_mat))
 
     if(fit_test){
-      y_test_for <- matrix(0,nrow = nrow(x_test),ncol = ncol(y_mat))
+      y_test_for <- numeric(nrow(x_test))
     }
 
-    Sigma_scale <- numeric(Sigma_scale)
+
+    Sigma_scale <- c(Sigma_scale)
+
     if(scale_y){
 
       # Re-scaling Sigma_all, important to cover convergence issues.
-      all_Sigma_post <- all_Sigma_post * (Sigma_scale)^2
       Sigma_post <- Sigma_post * (Sigma_scale)^2
 
-      for(i in 1:length(all_Sigma_post)){
-          y_train_for <- y_train_for + unnormalize_bart(z = y_train_post[,jj,i],a = min_y[jj],b = max_y[jj])
+      y_train_post <- unnormalize_bart_matrix(y_train_post,min_y,max_y)
+      y_test_post <- unnormalize_bart(y_test_post,min_y,max_y)
 
-          if(fit_test){
-            y_test_for[,jj] <- y_test_for[,jj] +  unnormalize_bart(z = y_test_post[,jj,i],a = min_y[jj],b = max_y[jj])
-            y_test_post[,jj,i] <-  unnormalize_bart(z = y_test_post[,jj,i],a = min_y[jj],b = max_y[jj])
-          }
-
-          y_train_post[,jj,i] <- unnormalize_bart(z = y_train_post[,jj,i],a = min_y[jj],b = max_y[jj])
-          if(na_boolean){
-            y_mat_post[,jj,i] <- unnormalize_bart(z = y_mat_post[,jj,i],a = min_y[jj],b = max_y[jj])
-          }
-        }
-      }
-    } else {
-      for(i in 1:(dim(Sigma_post)[3])){
-        Sigma_for <- Sigma_for + Sigma_post[,,i]
-        y_train_for <- y_train_for +  y_train_post[,,i]
-        if(fit_test){
-          y_test_for <- y_test_for +  y_test_post[,,i]
-        }
-
-      }
     }
 
+    Sigma_post_mean <- mean(Sigma_post)
+    y_hat_mean <- apply(y_train_post,1,mean)
 
-    Sigma_post_mean <- Sigma_for/dim(Sigma_post)[3]
-    y_mat_mean <- y_train_for/dim(y_train_post)[3]
+    y_test_mean <- apply(y_test_post,1,mean)
 
-    y_mat_test_mean <- if(fit_test){
-      y_test_for/dim(y_test_post)[3]
-    } else {
-      NULL
-    }
 
-    sigmas_mean <- sqrt(diag(Sigma_post_mean))
+    sigmas_mean <- sqrt(Sigma_post_mean)
 
     # Transforming to classification context
 
@@ -612,9 +588,9 @@ subart <- function(x_train,
       list_obj_ <- list(y_hat = y_train_post,
                         y_hat_test = y_test_post,
                         y_hat_mean = y_mat_mean,
-                        y_hat_test_mean = y_mat_test_mean,
-                        y_hat_mean_class = apply(y_mat_mean,2,function(x){ifelse(x>0,1,0)}),
-                        y_hat_test_mean_class = apply(y_mat_test_mean,2,function(x){ifelse(x>0,1,0)}),
+                        y_hat_test_mean = y_test_mean,
+                        y_hat_mean_class = apply(y_hat_mean,2,function(x){ifelse(x>0,1,0)}),
+                        y_hat_test_mean_class = apply(y_test_mean,2,function(x){ifelse(x>0,1,0)}),
                         Sigma_post = Sigma_post,
                         Sigma_post_mean = Sigma_post_mean,
                         sigmas_post = bart_obj[[7]],
@@ -644,18 +620,11 @@ subart <- function(x_train,
       if(diagnostic){
 
         diagnostic_bool = FALSE
-        ESS_val <- matrix(NA, nrow = nrow(Sigma_post), ncol = ncol(Sigma_post))
+        ESS_val <- ESS(x = Sigma_post)
         ESS_warn <- FALSE
-        for(i in 1:nrow(Sigma_post)){
-          ESS_val[i,i] <- ESS(x = sqrt(Sigma_post[i,i,]))
-          j = i
-          while(j < nrow(Sigma_post)){
-            j = j+1
-            ESS_val[i,j] <- ESS_val[j,i] <- ESS(x = Sigma_post[i,j,]/(sqrt(Sigma_post[i,i,])*sqrt(Sigma_post[j,j,])))
-            if(ESS_val[i,j]<round((n_mcmc-n_burn)/2,digits = 0)){
-              ESS_warn <- TRUE
-            }
-          }
+
+        if(ESS_val<round((n_mcmc-n_burn)/2,digits = 0)){
+          ESS_warn <- TRUE
         }
 
       } else {
@@ -681,8 +650,8 @@ subart <- function(x_train,
 
       list_obj_ <- list(y_hat = y_train_post,
                         y_hat_test = y_test_post,
-                        y_hat_mean = y_mat_mean,
-                        y_hat_test_mean = y_mat_test_mean,
+                        y_hat_mean = y_hat_mean,
+                        y_hat_test_mean = y_test_mean,
                         Sigma_post = Sigma_post,
                         Sigma_post_mean = Sigma_post_mean,
                         sigmas_mean = sigmas_mean,

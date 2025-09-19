@@ -97,7 +97,6 @@ struct modelParam_uni {
   arma::uvec init_train_index;
   arma::uvec init_test_index;
 
-  unsigned int d;
   unsigned int p;
 
   // BART prior param specification

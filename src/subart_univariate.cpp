@@ -72,7 +72,7 @@ Rcpp::List cppsubart_univariate(arma::mat x_train,
 
   // Define a progress bar here in the future
 
-  std::vector<Node*> all_trees(data.n_tree*data.d);
+  std::vector<Node*> all_trees(data.n_tree);
 
   for(auto trees= all_trees.begin(); trees!=all_trees.end(); trees++){
     *trees = new Node();
@@ -85,21 +85,9 @@ Rcpp::List cppsubart_univariate(arma::mat x_train,
 
 
 
-
-  // Creating variable to help to define which set of tree we are
-  unsigned int curr_tree_counter = 0;
-
   // Matrix to store all predictors for all y
   arma::vec y_mat_hat(data.n,arma::fill::none);
   arma::vec y_mat_test_hat(data.n_test,arma::fill::none);
-
-
-
-  // Declaring elements necessary to perform operations across the trees
-  arma::mat prediction_train_sum(data.n,data.d,arma::fill::none);
-  arma::mat prediction_test_sum(data.n_test,data.d,arma::fill::none);
-
-  arma::vec partial_u(data.n,arma::fill::none);
 
   // Creating the auxiliar predictor to update the predictions for a single tree
   arma::vec f_j_hat(data.n,arma::fill::zeros); // Prediction for the tree t
@@ -122,7 +110,6 @@ Rcpp::List cppsubart_univariate(arma::mat x_train,
   printf("\nParameters: \n");
   printf("\tnumber of trees: %u \n", data.n_tree);
   printf("\talpha and beta for tree prior: %f %f\n", data.alpha, data.beta);
-  printf("\tnumber of responses: %u \n", data.d);
   printf("\tnumber of training observations: %u\n", data.n);
   if(fit_test){
     printf("\tnumber of test observations : %u\n", data.n_test);
@@ -137,12 +124,6 @@ Rcpp::List cppsubart_univariate(arma::mat x_train,
   for(unsigned int i = 0; i < data.n_mcmc; i ++){
 
     if(i%printevery==0) printf("done %u (out of %u)\n",i,data.n_mcmc);
-
-
-      for(unsigned int id_train = 0; id_train <data.n; id_train++){
-        partial_u.at(id_train) = (data.y.at(id_train)-f_sum_trees.at(id_train));
-      }
-
 
       // Initializing the the column of f_sum_trees_test as zero
       if(data.fit_test){
@@ -167,29 +148,26 @@ Rcpp::List cppsubart_univariate(arma::mat x_train,
         // Sampling the verb
         verb = arma::randu(arma::distr_param(0.0,1.0));
 
-        if(all_trees[curr_tree_counter]->isLeaf){ // Is pointing to the root of the current tree
+        if(all_trees[t]->isLeaf){ // Is pointing to the root of the current tree
           verb = 0.1;
         }
 
         // Selecting each verb -- Here I considering the probability of Grow:0.3, Prune: 0.3, and Change = 0.4 -- May need to reavulate those
         if(verb < 0.5) {
           data.move_proposal.at(0)++;
-          grow_uni(all_trees[curr_tree_counter],data,partial_residuals);
+          grow_uni(all_trees[t],data,partial_residuals);
         } else if((verb >= 0.5) & (verb < 1.0)){
           data.move_proposal.at(1)++;
-          prune_uni(all_trees[curr_tree_counter],data,partial_residuals);
+          prune_uni(all_trees[t],data,partial_residuals);
         } else {
           data.move_proposal(2)++;
-          change_uni(all_trees[curr_tree_counter],data,partial_residuals);
+          change_uni(all_trees[t],data,partial_residuals);
 
         }
         // std::cout << "Tree fit one:" << trees_fit_store.at(1,t,j) << std::endl;
 
         // Updating Mu and Predictions
-        update_mu_and_predictions_uni(all_trees[curr_tree_counter],data,trees_fit_store,trees_fit_store_test,t);
-
-        // std::cout << "Obs one:" << f_sum_trees.at(1,j) << std::endl;
-        // std::cout << "Tree fit two:" << trees_fit_store.at(1,t,j) << std::endl;
+        update_mu_and_predictions_uni(all_trees[t],data,trees_fit_store,trees_fit_store_test,t);
 
         // At the end of the iteration we will have
         f_sum_trees = f_sum_j_excluding_tree_t + trees_fit_store.unsafe_col(t); // REMEMBER TO UPDATE trees_fit_store (specifically the col(t)) BEFORE!
@@ -220,6 +198,7 @@ Rcpp::List cppsubart_univariate(arma::mat x_train,
     if(i >= n_burn){
 
       y_train_hat_post.unsafe_col(curr) = f_sum_trees;
+
 
       if(data.fit_test){
         y_test_hat_post.unsafe_col(curr) = f_sum_trees_test;

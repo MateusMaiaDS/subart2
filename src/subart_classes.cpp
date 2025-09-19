@@ -151,6 +151,20 @@ modelParam_uni::modelParam_uni(arma::mat x_train_,
 
   p = x_train.n_cols;
 
+  p = x_train.n_cols;
+
+  init_train_index = arma::uvec(n);
+  init_test_index = arma::uvec(n_test);
+
+  for(unsigned int i = 0; i<n; i++){
+    init_train_index[i] = i;
+  }
+
+  for(unsigned int i = 0; i<n_test; i++){
+    init_test_index[i] = i;
+  }
+
+
   n_tree = n_tree_;
   node_min_size = node_min_size_;
   alpha = alpha_;

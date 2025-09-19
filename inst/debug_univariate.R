@@ -2,15 +2,15 @@ rm(list=ls())
 devtools::load_all()
 set.seed(42)
 
-n <- 1000
+n <- 500
 d <- 2
 
 # # Simulate from a function
-data <- sim_mvn_friedman1(n = n,
-                          p = 5,mvn_dim = d,Sigma = diag(nrow = 2))
-x_train <- data$x
+data <- list()
+data$x <- runif(n,-pi,pi)
+x_train <- as.matrix(data$x)
 x_test <- x_train
-y_mat <- data$y
+y_mat <- as.matrix(sin(data$x) + rnorm(n = n,sd = 0.1))
 # y_mat <- apply(y_mat,2,scale)
 
 # x_test <- x_train <- matrix(runif(n = n*d,min = -pi,max = pi),ncol=d)
@@ -24,8 +24,8 @@ y_mat <- data$y
 
 n_tree = 200
 node_min_size = 2
-n_mcmc = 5000
-n_burn = 2500
+n_mcmc = 2000
+n_burn = 500
 alpha = 0.95
 beta = 2
 nu = 3
@@ -39,6 +39,9 @@ diagnostic = TRUE
 
 y_mat = y_mat[,1, drop = FALSE]
 x_train <- data.frame(x_train)
+
+
+
 init_time <- Sys.time()
 subart_mod <- subart(x_train = x_train,
                      y_mat = y_mat,
@@ -47,3 +50,14 @@ subart_mod <- subart(x_train = x_train,
                      n_mcmc = n_mcmc,
                      n_burn = n_burn)
 end_time <- Sys.time() - init_time
+
+plot(x_train$x_train,apply(subart_mod$y_hat,1,mean))
+points(x_train$x_train,sin(x_train$x_train),col= 'blue')
+
+library(dbarts)
+
+dbarts_mod <- bart(x.train = x_train,y.train = y_mat,x.test = x_train,
+                   nskip = n_burn,ndpost = n_mcmc-n_burn,ntree = n_tree)
+
+plot(dbarts_mod$sigma, type = 'l', col = 'red')
+lines(sqrt(subart_mod$Sigma_post), type = 'l', col = 'blue')

@@ -52,6 +52,9 @@ void update_mu_and_predictions_uni(Node* tree,
 
     leaf->mu = arma::randn(arma::distr_param((leaf->S_j)/(leaf->Gamma_j),sqrt(data.sigma_sq/(leaf->Gamma_j)))) ;
 
+    // Rcpp::Rcout << "Value for mu-leaf:" << leaf->mu << endl;
+
+
     for(auto& id:leaf->train_index){
       trees_fit_store.at(id,t) = leaf->mu;
     }
@@ -90,17 +93,16 @@ void update_a_j(modelParam &data){
 
 void update_a_j_uni(modelParam_uni &data){
 
-  double shape_j = 0.5*(data.d+data.nu);
+  double shape_j = 0.5*(1.0+data.nu);
   double Precision = 1/data.sigma_sq;
 
   // Calculating shape and scale parameters
-  for(unsigned int j = 0; j < data.d; j++){
-    double scale_j = 1/(data.A_j*data.A_j)+data.nu*Precision;
-    double a_j_vec_double_aux = arma::randg(arma::distr_param(shape_j,1/scale_j));
+  double scale_j = 1/(data.A_j*data.A_j)+data.nu*Precision;
+  double a_j_vec_double_aux = arma::randg(arma::distr_param(shape_j,1/scale_j));
 
-    data.a_j = 1/a_j_vec_double_aux;
-    data.S_0 = (2*data.nu)/data.a_j;
-  }
+  data.a_j = 1/a_j_vec_double_aux;
+  data.S_0 = (2*data.nu)/data.a_j;
+
 
   return;
 }

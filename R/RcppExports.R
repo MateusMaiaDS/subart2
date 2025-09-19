@@ -21,3 +21,7 @@ cppsubart_univariate <- function(x_train, y, x_test, x_cut, n_tree, node_min_siz
     .Call('_subart2_cppsubart_univariate', PACKAGE = 'subart2', x_train, y, x_test, x_cut, n_tree, node_min_size, n_mcmc, n_burn, sigma_init, mu_init, sigma_mu, alpha, beta, nu, S_0, A_j, hier_prior_sigma, categorical_indicators, fit_test)
 }
 
+unnormalize_bart_matrix <- function(Z, a, b) {
+    .Call('_subart2_unnormalize_bart_matrix', PACKAGE = 'subart2', Z, a, b)
+}
+
