@@ -162,7 +162,9 @@ void update_y_mat_missing(modelParam & data,
       // Once there are only two outcomes, if ii=1, the selected column should be the other, such as
       if(ii==0) {
          ij = 1;
-      } else if(ii==1) {
+      }
+
+      if(ii==1) {
          ij = 0;
       }
 

@@ -48,16 +48,24 @@ subart_mod <- subart(x_train = x_train,
                      x_test = x_train,
                      n_tree = n_tree,
                      n_mcmc = n_mcmc,
-                     n_burn = n_burn)
+                     n_burn = n_burn,
+                     node_min_size = 2)
 end_time <- Sys.time() - init_time
 
-plot(x_train$x_train,apply(subart_mod$y_hat,1,mean))
-points(x_train$x_train,sin(x_train$x_train),col= 'blue')
+print(end_time)
 
 library(dbarts)
 
+init_time <- Sys.time()
 dbarts_mod <- bart(x.train = x_train,y.train = y_mat,x.test = x_train,
-                   nskip = n_burn,ndpost = n_mcmc-n_burn,ntree = n_tree)
+                   nskip = n_burn,ndpost = n_mcmc,ntree = n_tree)
+end_time <- Sys.time() - init_time
+print(end_time)
 
-plot(dbarts_mod$sigma, type = 'l', col = 'red')
-lines(sqrt(subart_mod$Sigma_post), type = 'l', col = 'blue')
+# plot(dbarts_mod$sigma, type = 'l', col = 'red')
+# lines(sqrt(subart_mod$Sigma_post), type = 'l', col = 'blue')
+
+# par(mfrow=c(1,1))
+# plot(x_train$x_train,apply(subart_mod$y_hat,1,mean))
+# points(x_train$x_train,sin(x_train$x_train),col= 'blue')
+# points(x_train$x_train,dbarts_mod$yhat.train.mean,col = 'red')
