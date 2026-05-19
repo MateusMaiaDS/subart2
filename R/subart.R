@@ -31,12 +31,14 @@
 #' @param numcut The maximum number of possible values used in the tree decision rules. The uniform approximation for choose a decision rule over \eqn{X^{(j)}} is given a grid of size \code{numcut}.
 #' @param usequants Boolean; if true the quantiles are going to be used to define the grid of cutpoints.
 #' @param m Hyperparameter used in the definition of the prior setting of the correlation matrix for the Probit-Multivariate approach.
-#' @param hier_prior_sigma Boolean; if true the prior for Sigma is defined using the hierachical prior as defined by Esser & Maia et. al 2025. See details for reference.
+#' @param varimportance Boolean; if \code{TRUE} returns a matrix with \code{n_mcmc} rows and \eqn{d} columns corresponding to the total number of times each variable was used across all trees in a MCMC iteration.
+#' @param hier_prior_bool Boolean; if true the prior for Sigma is defined using the hierarchical prior as defined by Esser & Maia et. al 2025. See details for reference.
+#' @param specify_variables A list of numeric vectors where each element contains the indices of the covariates allowed to be selected for the trees of the respective response \eqn{Y_j}. Default is \code{NULL}, which allows all covariates for all trees.
 #' @param diagnostic a boolean to compute or not the ESS for the posterior samples of the \eqn{\boldsymbol{\Sigma}}
 #'
 #' @export
 subart <- function(x_train,
-                   y_mat,
+                   y_train,
                    x_test = NULL,
                    n_tree = 100,
                    node_min_size = 5,
@@ -47,12 +49,21 @@ subart <- function(x_train,
                    nu = 3,
                    sigquant = 0.9,
                    kappa = 2,
-                   numcut = 100L, # Defining the grid of split rules
+                   numcut = 100L,
                    usequants = FALSE,
-                   m = 20, # Degrees of freed for the classification setting.
-                   hier_prior_sigma = TRUE,
-                   diagnostic = TRUE # Calculates the Effective Sample size for the covariance and correlation parameters
+                   m = 20,
+                   varimportance = TRUE,
+                   hier_prior_bool = TRUE,
+                   specify_variables = NULL,
+                   diagnostic = TRUE
 ) {
+
+  # Alias: accept y_mat for backward compatibility
+  y_mat <- y_train
+
+  # Convert matrix inputs to data.frame
+  if(is.matrix(x_train)) x_train <- as.data.frame(x_train)
+  if(is.data.frame(y_mat)) y_mat <- as.matrix(y_mat)
 
   # Handling error heading
   if(n_mcmc<=n_burn){
@@ -64,25 +75,44 @@ subart <- function(x_train,
     numcut <- nrow(x_train)
   }
 
+  if(varimportance && (NCOL(x_train)==1)){
+    warning("varimportance is set to FALSE as there is only one predictor.")
+    varimportance <- FALSE
+  }
 
-  # Case of fit_test being FALSE
-  if(is.null(x_test)){
+  if(!is.null(specify_variables) && (length(specify_variables) != NCOL(y_mat))){
+    stop("specify_variables must be a list with one element per response column.")
+  }
 
-    fit_test <- FALSE
-
+  # Build sv_bool / sv_matrix for specify_variables
+  if(is.null(specify_variables)){
+    sv_bool <- FALSE
+    sv_matrix <- matrix(1L, nrow = NCOL(y_mat), ncol = NCOL(x_train))
   } else {
-
-    if(is.vector(x_train)|| is.vector(x_test)){
-      stop("x_train and x_test must be either a matrix or data.frame.")
+    sv_bool <- TRUE
+    sv_matrix <- matrix(0L, nrow = NCOL(y_mat), ncol = NCOL(x_train))
+    for(i in seq_len(NCOL(y_mat))){
+      sv_matrix[i, specify_variables[[i]]] <- 1L
     }
+  }
 
-    # Verifying if x_train and x_test are matrices
-    if(!is.data.frame(x_train) || !is.data.frame(x_test)){
-      stop("Insert valid data.frame for both data and xnew.")
-    }
-
+  # Handle NULL x_test: internally use first 2 rows of x_train and strip at the end
+  if(is.null(x_test)){
+    x_test <- x_train[1:2, , drop = FALSE]
+    null_x_test <- TRUE
+    fit_test <- FALSE
+  } else {
+    null_x_test <- FALSE
+    if(is.matrix(x_test)) x_test <- as.data.frame(x_test)
     fit_test <- TRUE
+  }
 
+  if(is.vector(x_train) || is.vector(x_test)){
+    stop("x_train and x_test must be either a matrix or data.frame.")
+  }
+
+  if(!is.data.frame(x_train) || !is.data.frame(x_test)){
+    stop("Insert valid data.frame for both data and xnew.")
   }
 
   # Scale y_set as true as default
@@ -102,18 +132,9 @@ subart <- function(x_train,
     }
   }
 
-
-  # Avoiding error of this kind
   if(class_model & scale_y){
-    stop("Classificaton model should not scale y.")
+    stop("Classification model should not scale y.")
   }
-
-  # # Verifying if it's been using a y_mat matrix
-  # if(NCOL(y_mat)<2 & class_model){
-  #      stop("Insert a valid multivariate response for a classification task. ")
-  # }
-
-
 
   # Getting the valid
   dummy_x <- base_dummyVars(x_train)
@@ -270,7 +291,7 @@ subart <- function(x_train,
     df <- nu + ncol(y_mat_scale) - 1
 
     # Selecting hypera-parmeters for the t-distribution case
-    if(hier_prior_sigma){
+    if(hier_prior_bool){
       A_j <- numeric()
 
       for(i in 1:length(nsigma)){
@@ -394,7 +415,7 @@ subart <- function(x_train,
                                      alpha,beta,nu,
                                      S_0_wish,
                                      A_j,
-                                     hier_prior_sigma,
+                                     hier_prior_bool,
                                      categorical_indicators,
                                      fit_test)
     } else {
@@ -408,7 +429,6 @@ subart <- function(x_train,
 
         na_boolean <- TRUE
 
-        print(na_indicators)
         bart_obj <- if(ncol(y_mat_scale)==2){
           cppsubart_missing_2d(x_train_scale,
                                     y_mat_scale,
@@ -426,7 +446,7 @@ subart <- function(x_train,
                                     alpha,beta,nu,
                                     S_0_wish,
                                     A_j,
-                                    hier_prior_sigma,
+                                    hier_prior_bool,
                                     categorical_indicators,
                                     fit_test)
         } else {
@@ -446,7 +466,7 @@ subart <- function(x_train,
                             alpha,beta,nu,
                             S_0_wish,
                             A_j,
-                            hier_prior_sigma,
+                            hier_prior_bool,
                             categorical_indicators,
                             fit_test)
         }
@@ -473,7 +493,7 @@ subart <- function(x_train,
                        alpha,beta,nu,
                        S_0_wish,
                        A_j,
-                       hier_prior_sigma,
+                       hier_prior_bool,
                        categorical_indicators,
                        fit_test)
         } else {
@@ -491,7 +511,7 @@ subart <- function(x_train,
                     alpha,beta,nu,
                     S_0_wish,
                     A_j,
-                    hier_prior_sigma,
+                    hier_prior_bool,
                     categorical_indicators,
                     fit_test)
         }
@@ -512,6 +532,10 @@ subart <- function(x_train,
   }
   Sigma_post <- bart_obj[[3]]
   all_Sigma_post <- bart_obj[[4]]
+
+  # varimportance is a stub until C++ support is added (Phase 2)
+  var_importance <- NULL
+  var_importance_raw <- NULL
 
 
   Sigma_scale <- if(ncol(y_mat)!=1){
@@ -656,6 +680,7 @@ subart <- function(x_train,
                         Sigma_post_mean = Sigma_post_mean,
                         sigmas_mean = sigmas_mean,
                         all_Sigma_post = all_Sigma_post,
+                        var_importance = var_importance,
                         prior = list(n_tree = n_tree,
                                      alpha = alpha,
                                      beta = beta,
@@ -841,6 +866,7 @@ subart <- function(x_train,
                         Sigma_post_mean = Sigma_post_mean,
                         sigmas_mean = sigmas_mean,
                         all_Sigma_post = all_Sigma_post,
+                        var_importance = var_importance,
                         prior = list(n_tree = n_tree,
                                      alpha = alpha,
                                      beta = beta,
@@ -858,6 +884,13 @@ subart <- function(x_train,
 
   }
 
+  # Strip test predictions when x_test was originally NULL
+  if(null_x_test){
+    list_obj_$y_hat_test <- NULL
+    list_obj_$y_hat_test_mean <- NULL
+    if(!is.null(list_obj_$y_hat_test_mean_class)) list_obj_$y_hat_test_mean_class <- NULL
+    list_obj_$data$x_test <- NULL
+  }
 
   # Return the list with all objects and parameters
   return(list_obj_)
