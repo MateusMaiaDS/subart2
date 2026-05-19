@@ -70,7 +70,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // cppsubart_missing
-Rcpp::List cppsubart_missing(arma::mat x_train, arma::mat y_mat, arma::vec n_missing, arma::vec na_indicators, arma::mat x_test, arma::mat x_cut, unsigned int n_tree, unsigned int node_min_size, unsigned int n_mcmc, unsigned int n_burn, arma::mat Sigma_init, arma::vec mu_init, arma::vec sigma_mu, double alpha, double beta, double nu, arma::mat S_0_wish, arma::vec A_j_vec, bool hier_prior_sigma, arma::uvec categorical_indicators, bool fit_test);
+Rcpp::List cppsubart_missing(arma::mat x_train, arma::mat y_mat, arma::vec n_missing, arma::mat na_indicators, arma::mat x_test, arma::mat x_cut, unsigned int n_tree, unsigned int node_min_size, unsigned int n_mcmc, unsigned int n_burn, arma::mat Sigma_init, arma::vec mu_init, arma::vec sigma_mu, double alpha, double beta, double nu, arma::mat S_0_wish, arma::vec A_j_vec, bool hier_prior_sigma, arma::uvec categorical_indicators, bool fit_test);
 RcppExport SEXP _subart2_cppsubart_missing(SEXP x_trainSEXP, SEXP y_matSEXP, SEXP n_missingSEXP, SEXP na_indicatorsSEXP, SEXP x_testSEXP, SEXP x_cutSEXP, SEXP n_treeSEXP, SEXP node_min_sizeSEXP, SEXP n_mcmcSEXP, SEXP n_burnSEXP, SEXP Sigma_initSEXP, SEXP mu_initSEXP, SEXP sigma_muSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP nuSEXP, SEXP S_0_wishSEXP, SEXP A_j_vecSEXP, SEXP hier_prior_sigmaSEXP, SEXP categorical_indicatorsSEXP, SEXP fit_testSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -78,7 +78,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< arma::mat >::type x_train(x_trainSEXP);
     Rcpp::traits::input_parameter< arma::mat >::type y_mat(y_matSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type n_missing(n_missingSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type na_indicators(na_indicatorsSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type na_indicators(na_indicatorsSEXP);
     Rcpp::traits::input_parameter< arma::mat >::type x_test(x_testSEXP);
     Rcpp::traits::input_parameter< arma::mat >::type x_cut(x_cutSEXP);
     Rcpp::traits::input_parameter< unsigned int >::type n_tree(n_treeSEXP);
@@ -101,7 +101,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // cppsubart_missing_2d
-Rcpp::List cppsubart_missing_2d(arma::mat x_train, arma::mat y_mat, arma::vec n_missing, arma::vec na_indicators, arma::mat x_test, arma::mat x_cut, unsigned int n_tree, unsigned int node_min_size, unsigned int n_mcmc, unsigned int n_burn, arma::mat Sigma_init, arma::vec mu_init, arma::vec sigma_mu, double alpha, double beta, double nu, arma::mat S_0_wish, arma::vec A_j_vec, bool hier_prior_sigma, arma::uvec categorical_indicators, bool fit_test);
+Rcpp::List cppsubart_missing_2d(arma::mat x_train, arma::mat y_mat, arma::vec n_missing, arma::mat na_indicators, arma::mat x_test, arma::mat x_cut, unsigned int n_tree, unsigned int node_min_size, unsigned int n_mcmc, unsigned int n_burn, arma::mat Sigma_init, arma::vec mu_init, arma::vec sigma_mu, double alpha, double beta, double nu, arma::mat S_0_wish, arma::vec A_j_vec, bool hier_prior_sigma, arma::uvec categorical_indicators, bool fit_test);
 RcppExport SEXP _subart2_cppsubart_missing_2d(SEXP x_trainSEXP, SEXP y_matSEXP, SEXP n_missingSEXP, SEXP na_indicatorsSEXP, SEXP x_testSEXP, SEXP x_cutSEXP, SEXP n_treeSEXP, SEXP node_min_sizeSEXP, SEXP n_mcmcSEXP, SEXP n_burnSEXP, SEXP Sigma_initSEXP, SEXP mu_initSEXP, SEXP sigma_muSEXP, SEXP alphaSEXP, SEXP betaSEXP, SEXP nuSEXP, SEXP S_0_wishSEXP, SEXP A_j_vecSEXP, SEXP hier_prior_sigmaSEXP, SEXP categorical_indicatorsSEXP, SEXP fit_testSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -109,7 +109,7 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< arma::mat >::type x_train(x_trainSEXP);
     Rcpp::traits::input_parameter< arma::mat >::type y_mat(y_matSEXP);
     Rcpp::traits::input_parameter< arma::vec >::type n_missing(n_missingSEXP);
-    Rcpp::traits::input_parameter< arma::vec >::type na_indicators(na_indicatorsSEXP);
+    Rcpp::traits::input_parameter< arma::mat >::type na_indicators(na_indicatorsSEXP);
     Rcpp::traits::input_parameter< arma::mat >::type x_test(x_testSEXP);
     Rcpp::traits::input_parameter< arma::mat >::type x_cut(x_cutSEXP);
     Rcpp::traits::input_parameter< unsigned int >::type n_tree(n_treeSEXP);

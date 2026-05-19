@@ -199,19 +199,16 @@ subart <- function(x_train,
   # Storing the original
   x_train_original <- x_train
 
+  # Always scale x_test (even when fit_test = FALSE the dummy slice is still passed to C++)
+  x_test_scale <- as.matrix(x_test)
   if(fit_test){
-    x_test_scale <- as.matrix(x_test)
     x_test_original <- x_test
   }
 
   # Normalising all the columns
   for(i in 1:ncol(x_train)){
     x_train_scale[,i] <- normalize_covariates_bart(y = x_train_scale[,i],a = x_min[i], b = x_max[i])
-
-    if(fit_test){
-      x_test_scale[,i] <- normalize_covariates_bart(y = x_test_scale[,i],a = x_min[i], b = x_max[i])
-    }
-
+    x_test_scale[,i]  <- normalize_covariates_bart(y = x_test_scale[,i], a = x_min[i], b = x_max[i])
   }
 
   # Creating the numcuts matrix of splitting rules
@@ -473,10 +470,6 @@ subart <- function(x_train,
 
       } else {
         na_boolean <- FALSE
-
-        if(isFALSE(fit_test)){
-          x_test_scale <- x_train_scale
-        }
 
         bart_obj <-if(ncol(y_mat_scale)==2){
           cppsubart_2d(x_train_scale,
