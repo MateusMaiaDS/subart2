@@ -1,0 +1,121 @@
+\documentclass[11pt]{article}
+
+\usepackage{amsmath,amssymb}
+\usepackage{setspace}
+\usepackage{enumitem}
+\usepackage{hyperref}
+\usepackage{etoolbox}
+\usepackage[margin=1in]{geometry}
+
+\AtBeginEnvironment{quote}{\itshape}
+
+\setlength{\parskip}{0.8em}
+\setlength{\parindent}{0pt}
+
+\begin{document}
+
+\begin{center}
+{\Large\bf Response to the Editor and Reviewers}
+
+\vspace{1em}
+
+Manuscript ID: HEC-25-0702 \\
+Title: \emph{Nonparametric regression for cost-effectiveness analyses with observational data – a tutorial}
+\end{center}
+
+\vspace{1em}
+
+Dear Handling Editor,
+
+We once again would like to thank you and the reviewers for the careful assessment of our manuscript, and for alerting us to remaining flaws and inaccuracies in the manuscript. We addressed all specific points raised, as documented below, and also made some minor further changes to the text, in order to improve style and clarity.
+
+Sincerely,\\
+The Authors
+
+\section*{Response to the Editor}
+
+\textbf{Comment:}  
+\begin{quote}
+introduction
+
+para 2, sentence 2, 'in practice' is repeated twice
+
+para 2, in observational studies allocation may also be related to other characteristics e.g. pertaining to context
+
+para 3, needs to say 'already' not 'lready'
+
+page 3
+
+INB- you are referring to the incremental net monetary benefit (not the incremental net health benefit', this needs to be made plain
+\end{quote}
+
+\textbf{Response:}  
+Thank you for pointing out these typos and inaccuracies; we have corrected them.
+---
+
+\textbf{Comment:}  
+\begin{quote}
+page 6
+
+the point about no need to covariate adjust in trial-based econ eval isn't quite right, adjustment is recommended to adjust for chance imbalances and gain precision (cf the paper in HE by Manca. Hawkins and Sculpher pertaining to adjustment for baseline utility)
+\end{quote}
+
+\textbf{Response:}  
+We agree and have rewritten the corresponding paragraph accordingly. We now state that, while baseline adjustment is not necessary in order to obtain unbiased estimates, it still recommended in order to improve precision.
+
+---
+
+\textbf{Comment:}  
+\begin{quote}
+discussion
+
+its helpful that you have cited some related papers on missing data in CEA, a perhaps more relevant one to this paper is this one: Mason A, Gomes R, Grieve R, Carpenter J (2018). A Bayesian framework for health economic evaluation in studies with missing data. Health Economics (11):1670-1683. doi: 10.1002/hec.3793. Epub 2018 Jul 3.
+\end{quote}
+
+\textbf{Response:}  
+We now cite your suggested reference and removed one of the less relevant ones.
+
+\section*{Response to Reviewer 1}
+
+\textbf{Reviewer 1, Comment 1:}
+\begin{quote}
+p9 of 39 "The basic idea of BART is to express the outcome as a sum of regression
+trees plus a normally distributed error term" - this is BART for continuous outcomes, for survival outcomes the error term can have different forms, same for binary outcomes.
+\end{quote}
+
+\textbf{Response:}  
+This is of course correct, and we have rewritten the text accordingly.
+
+---
+
+\textbf{Reviewer 1, Comment 2:}
+\begin{quote}
+p10 of 39 "Bayesian estimation has a long tradition in CEA, with some authors arguing that it is the most natural framework to perform cost-effectiveness research under (Baio, 2018). The main reason is that cost-effectiveness researchers are concerned with the probability of cost effectiveness which is nothing other than $\Pr(\lambda \Delta_q - \Delta_c > 0)$." - I don't believe this is the argument given in Baio 2018, he will have emphasized the usefulness of the Bayesian interpretation of probability in quantifying uncertainty using value of information methods. Further, in decision making it is the treatment with the highest posterior expectation of NB that maximizes NB, not the highest probability of cost effectiveness (these metrics may not coincide).
+\end{quote}
+
+\textbf{Response:}  
+We agree that our previous claim was to strong: according to the Baio paper, the probability of cost-effectiveness is one metric to summarize the findings of a CEA, and it is very natural to do in the Bayesian framework. There is, however, no indication that this is \emph{the} most important reason to use Bayesian inference. We have rewritten the text accordingly, now saying "one reason" rather than "main reason".
+
+---
+
+\textbf{Reviewer 1, Comment 3:}
+\begin{quote}
+P21 of 39 looking at the trace plots it appears that this model converges rapidly. It would be helpful for the reader for you to interpret these plots and suggest a sufficient burn in based on them. Is it necessary to check for convergence of the other quantities estimated by the model such as the variance components? Explain to the reader why/why not.
+\end{quote}
+
+\textbf{Response:}  
+We added additional remarks on the interpretation of the traceplot. In particular, we argue that it is sufficient to focus on the main estimands of interest ($\Delta_c, \Delta_q$, INB) in our particular case, although investigating the covariance matrix can sometimes make sense. 
+
+---
+
+\section*{Closing}
+
+Once again, we thank the editor and reviewers for alerting to remaining inaccuracies in our paper. Through addressing them we were able 
+
+\vspace{1em}
+
+Sincerely,\\
+The Authors
+
+
+\end{document}

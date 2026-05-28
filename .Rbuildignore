@@ -4,3 +4,5 @@
 ^\.claude$
 ^AOAS_code$
 ^\.github$
+^inst/research_papers/subart_submission$
+^inst/research_papers/Nonparametric_CEA$

@@ -1,0 +1,426 @@
+\documentclass{article}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath}
+\usepackage{bbm}
+\usepackage{mdframed}
+\usepackage{amssymb}
+\usepackage{multirow}
+\usepackage{subcaption}
+\usepackage{xcolor}
+\usepackage[utf8]{inputenc}
+\RequirePackage[authoryear]{natbib}
+\RequirePackage[colorlinks,linkcolor=blue,citecolor=blue,urlcolor=blue,filecolor=.,backref=page]{hyperref}
+\usepackage{graphicx,float}
+%this is super important and is the reason for "latexmkrc"
+\usepackage{xr-hyper}
+\makeatletter
+\newcommand*{\addFileDependency}[1]{
+  \typeout{(#1)}
+  \@addtofilelist{#1}
+  \IfFileExists{#1}{}{\typeout{No file #1.}}
+}
+\makeatother
+% This makes a link with the main.tex in order to get the Equation and Section references from that, but only in the form of numbers, meaning that the external references to items in main will be in black (not blue) and will not be hyperlinks.
+\newcommand*{\myexternaldocument}[1]{
+    \externaldocument{#1}
+    \addFileDependency{#1.tex}
+    \addFileDependency{#1.aux}
+}
+\myexternaldocument{main}
+
+\title{\vspace{-3em}Seemingly unrelated Bayesian additive regression trees for cost-effectiveness analyses in healthcare\\\medskip\Large{Rebuttal Letter}}
+\author{Mateus Maia, Jonas L. Esser, Keefe Murphy and co-authors}
+\date{February 2025\vspace{-2em}}
+
+\begin{document}
+\maketitle
+
+\section{Area Editor}
+
+\begin{mdframed}
+    This article proposed a multivariate extension of BART, in which a univariate BART is used to model each response variable instead of relying on a single ensemble of trees for modeling the whole response vector. This new approach opened the possibility of understanding the non-linearity and interactions between outcomes and predictors in the studied regression framework and was applied to conduct a cost-effectiveness analyses of healthcare treatment.
+
+    We all found the paper interesting, and both reviewers returned largely positive opinions, especially regarding the novelty of the proposed approach and its potential improvements over existing approaches. They also raised many constructive comments across issues including real-data examples, trade-off between complexity and computational cost, comparison with existing methods, and technical details.
+\end{mdframed}
+
+Many thanks for the detailed comments regarding our paper titled `Seemingly unrelated Bayesian additive regression trees for cost-effectiveness analysis in healthcare'. We are enormously grateful for your interest in our work. We have addressed all queries from the two referees from whom you forwarded responses, as detailed in this letter. We have subsequently modified the text of the paper to incorporate the reviewers' comments and clarify other essential points. We have endeavoured to avoid unduly increasing the length of the paper in the process by placing some content in the appendices and removing other redundant content. More specifically, the main body of our paper (including references) was 32 pages in length in our original submission; after addressing all comments from the reviewers, this is still the case in the revised version.
+
+\begin{mdframed}
+The current draft focuses more on the methodology rather than the real-data application, which is an important component of AOAS relative to other more methodologically oriented journals. Improvement in this direction could make the draft a better fit to AOAS. For instance, additional introduction and discussion on the real-data example in Section 2 after the formulation of the cost-effectiveness would give readers a better understanding of the applicability and motivation of this work. Some detailed and lengthy introductions and discussion on the existing approaches in Sections 3 and 4 can be shortened or moved to supplement to leave more space for the discussion on the real data.
+\end{mdframed}
+
+This important point was also raised by Reviewer \#2. The revised Section \ref{sec:application} now better teases out the motivations behind the development of the suBART model. After the formulation of cost-effectiveness analysis in Section \ref{sec:CEA_theory}, which is now more specifically addressed towards observational studies like the TTCM application, we have added the new Section \ref{sec:TTCM_intro} called `Transmural Trauma Care Model (TTCM)' where we further motivate the application, describe the TTCM dataset in detail, and discuss why our model is particularly well-suited for this application. Some of what is written there formerly appeared in Section \ref{sec:case_study}. 
+
+As stated above, these additions were offset by moving some content to the appendices, particularly in relation to the simulation experiments in Section \ref{sec:simstudies}. Furthermore, some of the simulation experiments are now removed from the paper entirely; everything relating to what we called the Friedman \#2 scenario in our initial submission. This scenario, like the Friedman \#1 scenario which we retained, considered continuous responses. In our view, the associated experiments did not lead to any insights which were not already provided by the similar Friedman \#1 scenario. Hence, for the sake of keeping the paper short and more focused on the TTCM application and the CEA setting, we decided to remove this content. The results, even after accounting for the various new settings employed throughout our revised article, are largely unchanged from our first submission and, more importantly, consistent with the Friedman \#1 scenario in terms of what they suggest about the performance of our suBART model. What we now call Friedman \#2, formerly Friedman \#3, are simulation experiments to assess the performance of the probit version of suBART.
+
+\begin{mdframed}
+While the proposed method clearly benefited from the construction of using different BART for different response vectors, discussions on the trade-off of the improved complexity of the proposed methods are needed to better understand the advantages and limitations of the proposed method. For instance, information on the computational complexity and the potential of overfitting would be helpful for~readers.
+\end{mdframed}
+
+Thank you for highlighting the need for a discussion regarding the trade-offs associated with the proposed methodology. This allows us to elucidate and clarify these aspects in the main paper, which we believe  now adequately explains how suBART manages computational complexity and potential overfitting. Firstly, regarding computational costs, we note that we have addressed these concerns in detail in our reply to Major Comment \#3 from Reviewer \#2, and made related clarifications regarding the scaling of the computational costs as $d$ increases in Section \ref{sec:suBART_continuous} of the main paper. We would like to direct your attention to this reply.
+
+Secondly, regarding overfitting, it is worth emphasising that the priors for the trees $T^{(j)}$ and their terminal node parameters $\mu^{(j)}_{t\ell}$, which we set in accordance with the suggestions of \citet{chipman2010bart}, are selected to prevent overfitting. Regarding $T^{(j)}$, we note in Section \ref{sec:suBART_continuous} that the default hyperparameters proposed by \citet{chipman2010bart} are designed to favour shallow trees. Regarding $\mu^{(j)}_{t\ell}$, we now explicitly note~that the variance hyperparameter for its prior distribution, given in Equation \eqref{eq:mu_prior} of our paper, is inversely proportional to the number of trees, meaning that merely increasing the number of trees does not cause overfitting, given a well-chosen prior. It is also vital to stress that each response is assigned its own distinct set of additive trees, each of which are regularised in the same way as the standard BART. Though there is a potentially large total number of $m\times d$ trees across the entire ensemble, a crucial point is that the regularisation of each set of $m$ trees per outcome does not depend on the total number of outcomes $d$. Thus, while having a large $d$ incurs greater computational costs (see above), it does not incur any additional risk of overfitting. This key point is now clarified in Section \ref{sec:suBART_continuous}, below Equation \eqref{eq:mu_prior}. Finally, we note that our simulation results show good out-of-sample generalisation and support our claim that overfitting is not an issue for suBART.
+
+\section{Reviewer \# 1}
+
+\begin{mdframed}
+    \textbf{Summary:} The paper proposes two multivariate versions of BART. The first assumes continuous outcomes while the second assumes binary outcomes under a Probit link. The key difference to existing techniques (which often rely on equation-by-equation techniques) is the use of hierarchical inverted Wishart priors on the error covariance matrices. The authors apply the techniques to cost-effectiveness analyses and motivate, convincingly, why using a system of (nonlinear) equations makes sense. In several simulations they show that the approach works quite well in estimating causal effects.
+\end{mdframed}
+
+Thank you for your interest in our work and your positive feedback on these important aspects.
+
+\begin{mdframed}
+    \textbf{Comment \# 1:} I am wondering whether it would be possible to better tease out the nonlinearities in the estimates of the causal effects. Given that they depend on the covariates, would it be possible to show something like partial dependence plots to illustrate heterogeneity?
+\end{mdframed}
+
+Thank you for this suggestion. We have added a new section, based on the ps-suBART model fit to the TTCM dataset, where we show how the treatment effects vary for different values of the covariates and the propensity scores. The plots indeed illustrate some considerable heterogeneity. For the sake of conserving space, we have placed them in Appendix \ref{app:CATE}. 
+
+\begin{mdframed}
+    \textbf{Comment \# 2:} It makes a lot of sense to compare the estimates in the empirical application to other multivariate versions of BART. I'm wondering how much we would lose if the shocks are independent. This can be done by running independent BART models and then backing out the causal estimands or by making the inverse Wishart prior very tight so that the error covariance matrix is (close to) diagonal.
+\end{mdframed}
+
+Thank you for bringing attention to the possibility of independent shocks. In our view, your comment can be interpreted in two different ways:
+\begin{itemize}
+    \item What do we lose if we use suBART, but the shocks are independent?
+    \item What do we lose if the shocks are not independent, but we assume that they are independent?
+\end{itemize}
+ We addressed both questions by performing additional simulation experiments. We repeated the experiment based on the TTCM data from Section \ref{sec:TTCM_sim}, using only two models for the simulated datasets, for simplicity:
+ \begin{enumerate}
+    \item The ps-suBART method, as presented in the paper.
+    \item Independent BART models equipped with propensity scores, with analogous priors as we do for the suBART model (i.e. independent half-$t$ priors on the standard deviations of the error terms)
+    with the propensity scores added to the predictors. We call this model \emph{ps-indBART}.
+\end{enumerate}
+For the sake of fairness of the comparison, we use our own \texttt{subart} implementation for both models, with the code modified to accommodate the independent BART models as appropriate. We use three different choices for the correlation coefficient $\rho\colon 0, -0.25$, and $-0.5$, where the first value corresponds to the case of independent shocks and the second value of $\rho=-0.25$ has already been considered for ps-suBART in Section \ref{sec:TTCM_sim}. The results, and a lengthy discussion thereof, are presented in the new Appendix \ref{app:indBART}. 
+
+\begin{mdframed}
+    \textbf{Comment \# 3:} The hierarchical prior on the inverse Wishart distribution is similar to the prior specified in Giannone, Lenza, \& Primiceri (2015, ReStat). Maybe it would be worth citing this paper.
+\end{mdframed}
+
+Thank you for highlighting the similarities between these two priors. We have added a citation to \citet{giannone2015prior} where the prior from \citet{huang2013simple} is first described.
+
+\begin{mdframed}
+    \textbf{Comment \# 4:} One of the big advantages of the approach is that it is invariant with respect to changing the ordering of the equations. This is a result of the inverse Wishart prior and it would be worth highlighting this. For a discussion on this issue, see Carriero, Clark \& Marcellino (2019, JoE) or Chan, Koop and Yu (2023, JBES).
+\end{mdframed}
+
+Thank you for highlighting this advantage. Statements to this effect have been added where appropriate in Sections \ref{sec:suBART_continuous} and \ref{sec:suBART_probit}.
+
+\begin{mdframed}
+    \textbf{Comment \# 5:} On page 8 you write that the outcome is rescaled so that it is between -0.5 and 0.5. Is is really done like this or do you rescale the transformed dependent variable for a particular equation (i.e. do you subtract the terms capturing the covariances times the errors of the other equations from your dependent variables and use that as input in dbarts?)? If it's the latter I think the approach is only approximate (since the prior on the terminal node parameters would then depend, among others, on the covariance estimates) and it might be worth adding a brief statement in a footnote.
+\end{mdframed}
+
+Thank you for the comment regarding the rescaling of the outcomes, it was well-spotted and gave us an opportunity to clarify how the scaling was applied here. The outcomes have been transformed to fall within the range between $-0.5$ and $0.5$, which corresponds to the first approach that you mentioned. In accordance with \citet{chipman2010bart}, this is achieved through the following calculation\vspace{-1ex} 
+\[\Tilde{y}_{i}{^{(j)}} = \frac{y_{i}^{(j)}-y_{\min}^{(j)}}{y_{\max}^{(j)}-y_{\min}^{(j)}} - 0.5,\quad\mbox{for all $j = 1,\ldots, d$}.\vspace{-1ex}\]
+The model is then trained using $\smash{\Tilde{\mathbf{y}}^{(1)},\ldots,\Tilde{\mathbf{y}}^{(d)}}$. Subsequently, predictions are returned to the original scale of $\mathbf{y}^{(j)}$ using the $y_{\min}^{(j)}$ and $y_{\max}^{(j)}$ values as appropriate. As justified in \citet{chipman2010bart}, this rescaling is not strictly necessary, but helps when specifying the prior hyperparameters for the terminal node parameters. To avoid any ambiguity in the explanation of the rescaling, we now state in the main manuscript: ``$\ldots$  using its respective observed maximum and minimum values, as outlined by \citet{chipman2010bart}''.\enlargethispage{\bigskipamount}
+
+\begin{mdframed}
+    \textbf{Comment \# 6:} Doing only $3{,}000$ iterations of the algorithm and discarding the first $1{,}000$ as burn-in sounds a bit too low to me. In particular for the probit version where the covariance matrix is updated using a parameter-expanded MH step I doubt that this number is sufficient. Would it be possible to show convergence diagnostics to back your claim? I don't think it has to be in the main paper but it would be good to have it in the appendix (particularly given the fact that you propose a new algorithm).
+\end{mdframed}
+
+Thanks for raising your concern about the length of our chains. For our comparative experiments and application with continuous responses, we now adopt the consistent setting of 5000 MCMC iterations, with 1000 iterations discarded due to burn-in, and convergence appears satisfactory for all methods. However, your comment led us to reevaluate our choices for the number of iterations and $\nu_{\text{prop}}$ for the probit version of our suBART model. Your suspicion that longer chains would be required is valid, due to the inefficiencies of the PX-MH algorithm for updating $\boldsymbol{\Sigma}$. The updated MCMC settings we adopt for the probit version of our model are now clarified in Section \ref{sec:simstudies}. Furthermore, in the new Appendix \ref{app:convergence}, we show traceplots of the MCMC samples of entries of the $\boldsymbol{\Sigma}$ matrix under both the continuous and probit versions of our model and discuss the performance of our samplers in terms of convergence. Please see Appendix \ref{app:convergence} for full details.
+
+\begin{mdframed}
+    \textbf{Comment \# 7:} I don't think it will make a big difference but is there a reason why you use only 50 trees (instead of the 200 trees suggested in Chipman et al. 2010)? In any case, it would be good to have the same number of trees throughout your applications.
+\end{mdframed}
+
+Thank you for your comment regarding the default number of trees in suBART. As you noted, the difference in the number of trees $m$ does not have a big effect on the results, once $m$ is sufficiently high. We initially used lower numbers of trees, in order to maintain a reasonable runtime for the simulation experiments, given the number of replications involved. We initially had $m=50$ throughout the Friedman simulation experiments and $m=100$ for both the TTCM application and the additional simulation experiment based on the TTCM data. In line with your suggestion, we now consistently use $100$ trees everywhere. Some tests (not documented) showed that increasing the number of trees to $200$ makes essentially no difference, beyond slowing down the algorithm. Likewise, after increasing the number of trees from $50$ to $100$ in the Friedman simulation experiments, the results are essentially unchanged. Thus, given that the total number of trees across the entire ensemble also increases with the number of outcomes, we deem $m=100$ to be a sufficient balance between predictive performance and computational concerns. However, we also note that the results in the paper do differ in some other aspects compared to our initial submission, after re-running various results in accordance with other requested changes from this round of review.
+
+\begin{mdframed}
+    \textbf{Comment \# 8:} Some of the figures (particularly the legends related to Fig.2, Fig.3 and Fig.4) are hard to read when printed out in grayscale. Please optimize this.
+\end{mdframed}
+
+The captions for these three figures now state the names of the models for which results are given, in the order they are depicted from left to right. The same modifications have been made to the similar boxplots in Appendix \ref{app:friedman}. Finally, Figure \ref{fig:CEAC_comparison} has been updated to further distinguish the CEAC of the various methods using point shapes, in addition to colour.
+
+\begin{mdframed}
+    \textbf{Comment \# 9:} You estimate the propensity score using probit BART and then use the posterior mean as a plug-in estimate to set up the covariates in your main analysis. For a linear second stage regression this should only have an effect on the variances of the estimates. However, given that you have a nonlinear second stage model it could have effects on the direction of the estimates. Would it be possible to simply use the posterior distribution of the propensity scores and then, for each sample from your MCMC algorithm in the second stage, you draw from the posterior of the propensity scores? By doing so you would account for generated regressor issues.
+\end{mdframed}
+
+If we understand correctly, then you are proposing one of the following two strategies:
+\begin{itemize}
+    \item Set up a joint model for the treatment and the outcomes, where the propensity score (that is, the probability of treatment) enters as a random covariate into the outcome model.
+    \item First fit the model for the treatment, thereby obtaining posterior draws of the propensity scores. Then, when fitting the outcome model, add the previously obtained draws of the posterior draws as covariates into the outcome model, with a new draw being used at each MCMC iteration.
+\end{itemize}
+Either of these seem possible in principle; models of this type are discussed extensively in \citet{li2023bayesian}. Our approach, which we recap in greater detail below, instead relies on a point estimate of the propensity scores. The choice between these three diverging approaches is a point of contention, and it seems that no consensus has been reached in the literature so far. We again refer to \citet{li2023bayesian} for an insightful discussion of the issue, presenting multiple different viewpoints and examples from the literature.
+
+In the original paper presenting the ps-BART model, as well as the Bayesian Causal Forest, \citet{hahn2020bayesian} argue strongly in favour of using a point estimate of the propensity score, instead of a full posterior distribution\footnote{Note that the publication in Bayesian Analysis is comprised of a core paper, several contributed discussions, and a rejoinder at the end. In the present context, Section 8.3 in the core paper and Section 1.1 in the rejoinder are particularly relevant.}.  
+Their argument, which we find convincing, can be sketched as follows: the whole model is formulated conditionally on the covariates $\mathbf{x}_i$ (we here include the treatment indicator in the covariates). Then, as the point estimate of the propensity score, say $\hat{\pi}_i$, is a deterministic transformation of $\mathbf{x}_i$, we do not need to account for uncertainty in $\hat{\pi}_i$ any more than we need to account for uncertainty in $\mathbf{x}_i$. Thus, there are no generated regressor issues. Notably, \citet{hahn2020bayesian} explicitly address the implications for non-linear models when justifying their approach from a formal Bayesian perspective.  While we share their point of view, there is by no means universal agreement on whether this approach is indeed superior to the joint modelling approach. We have referenced both viewpoints in a footnote in Section \ref{sec:case_study}, which deals with the analysis of the TTCM data, and directed the reader to the relevant discussions in \citet{hahn2020bayesian} and \citet{li2023bayesian}.
+
+Additionally, the extensive simulation study by \citet{dorie2019automated} showed that different variations of the ps-BART method perform very well from a frequentist perspective. Although \citet{dorie2019automated} does not address the conceptual disagreement between \citet{hahn2020bayesian} and \citet{li2023bayesian}, we have also referenced \citet{dorie2019automated} as an additional justification for our decision to use a point estimate of the propensity score, instead of the full posterior.
+
+\section{Reviewer \# 2}
+
+\begin{mdframed}
+   The authors propose an interesting multivariate extension to BART where the response variables, either all continuous or all binary, are modeled via multiple sets of trees as opposed to just one set as previously proposed. suBART distinguishes itself as it is i) tailored to the context of causal inference, ii) extended to deal with binary responses and iii) has an open-source software implementation. 
+   
+   I see positive points in the proposed model, such as the use of dedicated sets of trees for each response, which tends to improve prediction accuracy for each response but also increases the overall computational run-time, and the explicit estimation of the covariance structure between the responses. That said, I outline below some aspects that could be strengthened in the paper.
+\end{mdframed}
+
+Thank you for your interest in our work and your positive feedback on these important aspects of our first draft.
+
+\subsection{Major Comments}
+
+\begin{mdframed}
+   \textbf{1. TTCM application:} The paper would benefit if the application that motivated the
+proposal of suBART were introduced and detailed earlier in the paper, possibly in its own
+section, so that the paper is more in line with what is expected from publications in the
+AOAS. Additionally, some discussion as to why suBART is suited for TTCM and what
+its advantages/disadvantages are compared to other methods would be welcome. Finally,
+I understand that the subject of the paper is not missing imputation. However, I would
+appreciate more details on the method adopted (i.e., predictive mean matching by Vink
+et al. (2014)) given the dimension of the TTCM dataset ($n = 140$ and $p = 11$).
+\end{mdframed}
+
+Thank you for highlighting this necessity. As stated to the editor, we have now added a new subsection called `Transmural Trauma Care Model (TTCM)' after the formulation of cost-effectiveness in Section \ref{sec:application} where we motivate the application, describe the TTCM dataset in detail, and discuss why our model is particularly well-suited for this application.
+
+We further added some clarifying comments and references on how we performed the imputation via predictive mean matching through the \textsf{R} package \texttt{mice} \citep{van2011mice}.
+
+\begin{mdframed}
+  \textbf{2. Similar Works:} Linked to my point above, there is currently a sentence in the Introduction that briefly mentions the differences between suBART and the work of \citet{chakraborty2016bayesian}, ``who presented a version of seemingly unrelated BART for exclusively continuous outcomes with an adaptive number of trees''. I got the impression that if a propensity score were added to the design matrix of \citet{chakraborty2016bayesian}'s suBART, it would be tailored to causal inference. So, are these\footnote{To wit, the adjustments to causal inference and the adaptive number of trees, where the latter seemed to me more of a heuristic than an actual fully Bayesian approach.} the only (technical) differences between suBART and the work of \citet{chakraborty2016bayesian}? Either way, the paper would benefit if the authors could elaborate on the similarities and differences between these two approaches.
+\end{mdframed}
+
+Thank you for giving us the opportunity to further outline  the differences between suBART and the work of \citet{chakraborty2016bayesian}.
+As you noted in your summary, our paper is novel because we tailored our method to the context of causal inference, extended it for binary responses, and implemented an open-source package to make the algorithm available to practitioners. Beyond that, a key aspect that was not given sufficient emphasis in our initial submission is that we also introduced a carefully calibrated prior based on the hierarchical inverse-Wishart prior of \citet{huang2013simple}, rather than the non-informative inverse-Wishart prior of \citet{chakraborty2016bayesian}. This is crucial in order to properly calibrate the prior on the residual variance parameters, which mitigates against overfitting and ensures appropriate uncertainty quantification in the causal effects, among other things. A further novelty lies in how this calibration was achieved with recourse to the induced half-$t$ prior on the standard deviations which follows from the hierarchical structure of the prior on $\boldsymbol{\Sigma}$. These differences are now highlighted more strongly in the paper.
+
+\begin{mdframed}
+ \textbf{3. Computational Costs:} One of the advantages of suBART over mvBART is that the former uses a set of $m$ trees for each response. In practice, this increases suBART's predictive performance compared to mvBART, which uses just one set of $m$ trees to predict all responses. I could not find a sentence/paragraph in the paper where suBART's computational costs are contrasted either with mvBART or BART outside the context of the simulation experiments and TTCM dataset. I'm not referring to a table or plot with run-times but rather to more general comments that detail the additional costs of suBART. For instance, suBART has a computational cost of at least $O(n\times d \times m)$ per MCMC iteration\footnote{Disregarding the overheads due to vector operations and matrix multiplication and inverses.}, an overhead cost of $O(d)$ over mvBART. In a scenario where $d$ is moderate, suBART may be infeasible and mvBART could be an option. These considerations should be mentioned as they give a broader perspective on how suBART's pros translate into practice in settings different than those considered in the paper.
+\end{mdframed}
+
+As mentioned in a reply to a comment from the editor, it is important to note that the computational scaling in relation to the number of outcomes $d$ is comparable to fitting $d$ independent BART models for each outcome. Although both approaches result in a total of $m\times d$ trees, assigning $m$ trees per outcome under suBART has advantages over other approaches like mvBART, which typically imposes a single set of $m$ trees for the multivariate response, thus lacking flexibility. When $d$ is not too large, we believe that the trade-off between the improved predictive performance and the increased computational expense is worthwhile. Although we now caution in Section \ref{sec:suBART_continuous} of the main paper that suBART may be computationally prohibitive when $d$ is large, we conjecture here that mvBART's gains in such settings would be purely computational and that suBART would still ultimately yield better results. Moreover, as discussed below, following the suggestion to increase the number of trees for mvBART to $m\times d$, for the sake of fairness, has little effect on the mvBART results.
+
+\begin{mdframed}
+   \textbf{4. Simulation Experiments:} I wonder whether ps-suBART outperforms ps-mvBART because it has $m$ dedicated trees for each response in $\mathbf{Y}$, whereas mvBART has on average $m$/$d$ (considering a scenario where the responses have no covariates in common). For instance, the covariates in mvBART `compete' for trees since they share the same set of trees with all responses. In practice, with the same number of trees as suBART, mvBART has fewer trees per response and hence its performance will be at best suboptimal.
+\end{mdframed}
+
+Thank you for highlighting the difference in the number of trees between mvBART and suBART. We agree that assigning $m$ trees \emph{per outcome} is a key advantage of suBART. You are also correct in noting that the covariates in mvBART compete to form splitting rules across all responses. Nonetheless, in order to address potential performance differences arising from this aspect, all experiments with mvBART now use a total of $m \times d$ trees, where $m=100$ is the default number of trees for each component $j$ in suBART (and for each independent BART run), and $d$ is the total number of response components. The updated results indicate that suBART continues to outperform mvBART, even under these adjusted settings with a more comparable number of trees. The text has been revised to clarify that all mvBART runs throughout the paper now use $m \times d$ trees in total.
+
+\begin{mdframed}
+   $\cdot$ \textbf{DART prior}: Another point to consider would be whether the DART prior (Linero, 2018) is adopted by mvBART. As the DART prior tends to favour covariates that are part of the structure of the trees, an insufficient number of trees could limit mvBART's abilities to identify all variables that are important for all responses; in case of a sufficient number of trees, the DART prior should be beneficial.
+\end{mdframed}
+
+Thank you for drawing attention to this point, which was unclear in our submitted manuscript. While Linero's sparsity-inducing prior is available as an option in the \texttt{skewBART} implementation of the mvBART model, we do not use this option in our analyses in the paper, which is now clearly stated in Section \ref{sec:simstudies}. We also did not implement Linero's prior for our own suBART model, although doing so could be possible. This is now noted in the Discussion. 
+
+One reason for not implementing  Linero's prior is that the number of covariates in our TTCM application is not very large. More importantly, however, our primary interest lies in the estimation of causal effects, which DART was not developed for. It is well-known that ``na\"{i}ve'' regularisation priors, which are not carefully constructed for the purpose of causal inference, can lead to severely biased estimates of treatment effects \citep{hahn2018regularization, hahn2020bayesian}. With this in mind, we believe that thorough testing and modifications would be necessary in order for the DART prior to be beneficial within suBART, given the causal nature of the TTCM application. 
+
+In this context we refer to a related approach proposed by \citet{caron2022shrinkage}, which is essentially a combination of DART and the Bayesian Causal Forest (BCF). Extending their model to the SUR setting is possible in principle, but this seems beyond the scope of our paper. 
+
+\begin{mdframed}
+   $\cdot$ \textbf{Variable importance and variable interaction:}: In suBART, the initial ideas of Chipman et al. (2010) could still be used to get an idea of which covariates are important, in case there is no interest in more elaborated or agnostic methods. However, Chipman et al. (2010)'s ideas do not directly apply to mvBART because a covariate might be important for one response but completely irrelevant for another.
+\end{mdframed}
+
+Thank you for this suggestion. Indeed, the same variable importance plots as in \citet{chipman2010bart} can also be created for suBART, and this option is implemented in our \texttt{subart} software package. As a demonstration, we added corresponding plots for the ps-suBART model fit to the TTCM dataset in Appendix \ref{app:var_imp}.
+
+\begin{mdframed}
+That said, for a fair comparison, the number of trees for mvBART should be $m\times d$ and not
+$m$.
+\end{mdframed}
+
+Thank you for the suggestion. As mentioned in a previous reply above, all mvBART runs were updated to use $m \times d$ trees in total, with little effect on the results.
+
+\begin{mdframed}
+\textbf{5. RMSE in Figure 3:} Since $y^{(3)}$ is linear, I was expecting BayesSUR to return the lowest RMSE. Is there any inconsistency with the RMSE results in the Figure 3 for $j = 3$?
+\end{mdframed}
+Thank you for noticing this oversight on our part. Your intuition is correct and there should not have been a mismatch between the plot and the text. This was merely the result of a typo whereby another figure from one of our other simulations had been inserted in the wrong place in our first draft. The actual results always indicated that BayesSUR returns the lowest RMSE in Figure \ref{fig:sim_reg_friedman_one_1000_3d} for $j=3$ and this is now reflected in the updated plots. Relatedly, we note that there have been further slight changes to the figures in this revision after re-running various results in accordance with other requested changes from this round of review.
+
+\subsection{Minor comments}
+
+\begin{mdframed}
+   \textbf{1. Semi-parametric BART models:}  In the second bullet point in Section 7 (Discussion), the authors suggest that semi-parametric BART models could be an option to suBART if there is interest in using a linear predictor along with BART. This is an active area of research and there are already some works in this direction, in the context of univariate responses, that could be referenced; see, for example, Zeldow et al. (2019); Tan and Roy (2019); Deshpande et al. (2020); Prado et al. (2021); Dorie et al. (2022).
+\end{mdframed}
+
+Thank you for highlighting this oversight on our part. We should have been more explicit in what we meant when using the phrase `semi-parametric BART'. In our view, there are, in the presence of multivariate outcomes, two distinct notions of what it might mean to combine a parametric linear predictor with a nonparametric BART:
+\begin{enumerate}
+    \item Using a combination of a BART and a linear predictor for the \emph{same} response variable. This aspect was previously missing from the paper entirely, and is what your suggested references deal with. As these references deal with univariate BART, they are tailored towards combining BART and a parametric functional form within the same conditional expectation.
+    \item Using \emph{only} BART for one response variable, and only a linear predictor for another, given that suBART is designed for multivariate responses. This is what we tried to communicate in our original point in the Discussion. The idea was that, if there is a strong prior belief of linearity for one response variable but not for another, then this kind of mixed BART-linear model could be beneficial.
+\end{enumerate}
+We recognise that our previous exposition was somewhat unclear, and have rewritten the corresponding bullet point accordingly. We stress, however, that such a hybrid model would require strong beliefs \emph{a priori} over which outcomes should explicitly be specified as having a simpler, linear functional form. This could present challenges to users of a practical implementation. At present, suBART is automatic insofar as it obviates the need for such pre-specifications, albeit at the expense of minor efficiency losses when the true conditional expectation is linear. Finally, we now also note that semi-parametric extensions of suBART in accordance with the first notion above could also be developed.
+
+\begin{mdframed}
+  \textbf{2. Ordering categories:} The authors say `We account for the categorical predictors in the tree-based models using the method of ordering categories proposed by Breiman et al. (1984)'. Does it mean that the set of labels which is used to create the splitting rules of the left and right leaf nodes is grouped by the mean response (in this case, partial residuals)? If so, is it performed in every iteration whenever a categorical variable is chosen for a splitting rule or is it a one-time pre-processing step that takes place before running suBART?
+\end{mdframed}
+
+Thank you very much for bringing this point to our attention. In our original implementation, which we used when preparing the submitted manuscript, the ordering step was only applied once, before the sampling began. However, when reviewing \citet{breiman1984classification} and related work by \citet{wright2019splitting} after reading your comment, we realised that this is actually not a proper implementation of the method. Instead, the categorical variables should indeed be reordered according to the partial residuals, whenever they are chosen at any MCMC iteration. We modified our implementation accordingly and added an explanatory note in the text. Consequently, the results in Section \ref{sec:case_study} are now slightly different. Since the performance in the simulation experiments is now better than before, we are confident that the new implementation is indeed superior to the previous one.
+
+\begin{mdframed}
+ \textbf{3. Notation:} For consistency, the product with respect to the number of leaf nodes in the joint prior distribution of BART should be $b_{t}$ as opposed to $b_{m}$. There's also some inconsistencies with index $h$ (sometimes it's used to denote the number of leaf nodes, which is also denoted by $b_{t}$, and it's also the index of MCMC iteration in Algorithm 1).
+\end{mdframed}
+Thank you for suggesting these clarifications. We fixed the errors and cleaned up the notation: the number of  leaf nodes is now consistently denoted by $h$, while the index of the MCMC iteration is assigned the letter $k$. Other minor typos which we discovered while preparing this resubmission were also addressed. 
+
+\begin{mdframed}
+   \textbf{4. Typos:} In the last paragraph of page 6, there should be a comma rather than a full stop after $\mu_{t\ell} \sim \mbox{N}(0,\sigma_{\mu}^{2})$. There is a typo in the reference of \citet{baio2012bayesian} - it should be `Boca Raton'. The reference of McJames is missing the journal.
+\end{mdframed}
+
+Thank you for noting the typos in the \citet{baio2012bayesian} and \citet{mcjames2024bayesian} citations. Both have now been amended. At the time of our initial submission, the McJames article was an arXiv pre-print which had not yet been published. Thank you also for catching the erroneous full stop, which we have also corrected.
+
+\bibliographystyle{ba}
+\bibliography{sample}
+
+% \clearpage
+% %#\setcounter{subsection}{0}
+% %\renewcommand\thesubsection{\Alph{subsection}}
+% %\renewcommand\thefigure{\thesubsection.\arabic{figure}}
+% %\renewcommand\thetable{\thesubsection.\arabic{table}}
+
+% \section{Additional Results}\label{sec:appendix_rebuttal}
+
+
+% %This extra Friedman \#3 scenario is more challenging in terms of the complexity of the non-linear effects. It is also notable that $y^{(1)}$ and $y^{(2)}$ do not share any predictors. 
+% For brevity sake, we chose to remove the Simulation scenario named as \textbf{Friedman \#3} from Section \ref{sec:sim_continuous}. Although, the results confirm satisfactory performance of the proposed suBART, we evaluated that, considering the scope of an applied paper, and jointly with previous simulation studies present in Section \ref{sec:sim_continuous} and \ref{sec:TTCM_sim}, this set of experiments may be too redundant to be included within the main manuscript (even considering the Appendix). For reproducibility, we include the rerun experiments from the previous manuscript, adapted to the new paper modifications, in this rebuttal appendix.
+
+% The model DGP is described by:
+
+% \noindent\textbf{Friedman \#3}:
+% \begin{align*}
+% &x_{i}^{(1)}, \ldots, x_{i}^{(5)}, x_{i}^{(8)}, x_{i}^{(10)} \overset{\mathrm{iid}}{\sim} \text{Uniform}(0, 1) \\[-0.75ex]
+% &x_{i}^{(6)} \sim \text{Uniform}(0, 100) \\[-0.75ex] 
+% &x_{i}^{(7)} \sim \text{Uniform}(40\pi, 560\pi) \\[-0.75ex] 
+% &x_{i}^{(9)} \sim \text{Uniform}(1, 11) \\[-0.75ex] 
+% &y_{i}^{(1)} = 10 \sin(x_{i}^{(1)} x_{i}^{(2)}\pi) + 20 (x_{i}^{(3)} - 0.5)^2 + 10 x_{i}^{(4)} + 5 x_{i}^{(5)} \\[-0.75ex]
+% &y_{i}^{(2)} = \sqrt{{x_{i}^{(6)}}^2 + \left(x_{i}^{(7)} x_{i}^{(8)} - \frac{1}{{x_{i}^{(7)} x_{i}^{(9)}}}\right)^2} \\[-0.75ex]
+% &y_{i}^{(3)} = \text{atan}\left(\frac{{x_{i}^{(7)} x_{i}^{(8)} - \frac{1}{{x_{i}^{(7)} x_{i}^{(9)}}}}}{{x_{i}^{(6)}}}\right),
+% \end{align*}\vspace{-0.5em}% 
+
+
+% \noindent The the covariance parameters in this scenario align with those for the initial Friedman \#1 continuous response simulation experiment, as outlined in Table \ref{tab:friedman_reg_parameters}, but with updated values as show in Table \ref{tab:friedman_reg2_parameters}.
+
+% \begin{table}[H]
+% \centering
+% \caption{True parameters of $\boldsymbol{\Sigma}$ used for the Friedman \#3 simulation scenario.}\vspace{-1em} 
+% \label{tab:friedman_reg2_parameters}
+% \begin{tabular}{ccccccc}
+% \multicolumn{7}{c}{} \\ 
+% \hline
+% $d$ & $\sigma_1$ & $\sigma_2$ & $\sigma_3$ & $\rho_{12}$ & $\rho_{13}$ & $\rho_{23}$ \\ 
+% \hline
+% $2$ &   $1.00$   &   $125.00$   &   ---   &   $0.75$ & ---   &  ---   \\ 
+% $3$ & $1.00$ &  $125.00$   &  $0.10$   &   $0.80$   &   $0.50$  &$0.25$ \\ 
+% \hline
+% \end{tabular}
+% \end{table}
+
+% \noindent All the results are displayed below:
+% %\noindent Under the Friedman \#3 scenario, suBART generally performs as well as or better than its competitors in all aspects. To demonstrate this, Figure \ref{fig:sim_reg_friedman_three_1000_2d} depicts the results under this data-generating process with $d=2$ and $n_{\text{train}}=n_{\text{test}}=1000$. The deteriorated performance of mvBART in this case is notable, particularly in relation to the RMSE for the second outcome and the PI coverage for both outcomes. This can be explained by the particular nature of the simulation setting, where two outcomes relate to an entirely distinct set of predictors, while the tree splits assume the opposite. Additionally, the calibration of the suBART estimations remains consistent, as evidenced by the boxplot for the PI coverage, which mostly covers the correct value.
+% \begin{figure}[H]
+%     \centering
+%     \includegraphics[width=\textwidth]{figures/friedman2_regression_1000_2.pdf}
+%     \caption{Simulation results for Friedman \#3 under the suBART, BART, mvBART, and BayesSUR models (from left to right) with $n_{\text{train}} = n_{\text{test}}=1000 $ and $d = 2$.}
+%     \label{fig:sim_reg_friedman_three_1000_2d}
+% \end{figure}\vspace{-1em}
+
+% \begin{figure}[H]
+%     \centering
+%     \includegraphics[width=.85\textwidth]{figures/friedman2_regression_250_2.pdf}
+%     \caption{Simulation results for Friedman \#3 under the suBART, BART, mvBART, and BayesSUR models (from left to right) with $n_{\text{train}} = n_{\text{test}}=250 $ and $d = 2$.}
+%     \label{fig:sim_reg_friedman_three_250_2d}
+% \end{figure}\vspace{-2.25em}
+% \begin{figure}[H]
+%     \centering
+%     \includegraphics[width=.85\textwidth]{figures/friedman2_regression_250_3.pdf}
+%     \caption{Simulation results for Friedman \#3 under the suBART, BART, and BayesSUR models (from left to right) with $n_{\text{train}} = n_{\text{test}}=250$ and $d = 3$.}
+%     \label{fig:sim_reg_friedman_three_250_3d}
+% \end{figure}\vspace{-2.25em}
+% \begin{figure}[H]
+%     \centering
+%     \includegraphics[width=.85\textwidth]{figures/friedman2_regression_500_2.pdf}
+%     \caption{Simulation results for Friedman \#3 under the suBART, BART, mvBART, and BayesSUR models (from left to right) with $n_{\text{train}} = n_{\text{test}}=500$ and $d = 2$.}
+%     \label{fig:sim_reg_friedman_three_500_2d}
+% \end{figure}\vspace{-2.25em}
+% \begin{figure}[H]
+%     \centering
+%     \includegraphics[width=.85\textwidth]{figures/friedman2_regression_1000_2.pdf}
+%     \caption{Simulation results for Friedman \#3 under the suBART, BART, mvBART, and BayesSUR models (from left to right) with $n_{\text{train}} = n_{\text{test}}=1000$ and $d = 2$.}
+%     \label{fig:sim_reg_friedman_three_1000_2d}
+% \end{figure}\vspace{-2.25em}
+% \begin{figure}[H]
+%     \centering
+%     \includegraphics[width=.85\textwidth]{figures/friedman2_regression_500_3.pdf}
+%     \caption{Simulation results for Friedman \#3 under the suBART, BART, and BayesSUR models (from left to right) with $n_{\text{train}} = n_{\text{test}}=500$ and $d = 3$.}
+%     \label{fig:sim_reg_friedman_three_500_3d}
+% \end{figure}\vspace{-2.25em}
+% \begin{figure}[H]
+%     \centering
+%     \includegraphics[width=.85\textwidth]{figures/friedman2_regression_1000_3.pdf}
+%     \caption{Simulation results for Friedman \#3 under the suBART, BART, and BayesSUR models (from left to right) with $n_{\text{train}} = n_{\text{test}}=1000 $ and $d = 3$.}
+%     \label{fig:sim_reg_friedman_three_1000_3d}
+% \end{figure}\vspace{-2em}
+
+% \begin{table}[H]
+% \centering
+% \caption{RMSE and coverage of a 50\% CI for $\sigma_j$ and ${\rho}_{jk}$  for Friedman \#3 with $n_{\text{train}} = n_{\text{test}} =250$.}
+% \label{tab:sim_corr_fried_three_combined_250}
+% \begin{tabular}{lcccccccc}
+% \hline
+% \small
+% & \multicolumn{4}{c}{\textbf{RMSE}} & \multicolumn{4}{c}{\textbf{CI coverage}} \\
+%  & \textbf{suBART} & \textbf{BART} & \textbf{mvBART} & \textbf{BayesSUR} & \textbf{suBART} & \textbf{BART} & \textbf{mvBART} & \textbf{BayesSUR} \\
+% \hline
+% $d=2$ & & & & & & & & \\
+% \hline
+% {$\sigma_{1}$} & $0.11$ & $0.1$ & $0.11$ & $1.61$ & $0.16$ & $0.05$ & $0.31$ & $0.00$ \\
+% {$\sigma_{2}$} & $17.8$ & $20.6$ & $24.8$ & $61.9$ & $0.05$ & $0.06$ & $0.01$ & $0.00$ \\
+% {$\rho_{12}$}   & $0.09$ & ---    & $0.13$ & $0.56$ & $0.19$ & ---    & $0.18$ & $0.00$ \\ 
+% \hline
+% $d=3$ & & & & & & & & \\
+% \hline
+% {$\sigma_{1}$} & $0.09$ & $0.21$ & ---    & $1.62$ & $0.30$ & $0.02$ & ---    & $0.00$ \\
+% {$\sigma_{2}$} & $16.8$ & $20.80$ & ---    & $61.9$ & $0.12$ & $0.03$ & ---    & $0.00$ \\
+% {$\sigma_{3}$} & $0.01$ & $0.01$ & ---    & $0.13$ & $0.37$ & $0.45$ & ---    & $0.00$ \\
+% {$\rho_{12}$}   & $0.06$ & ---    & ---    & $0.59$ & $0.20$ & ---    & ---    & $0.00$ \\ 
+% {$\rho_{13}$}   & $0.08$ & ---    & ---    & $0.41$ & $0.48$ & ---    & ---    & $0.00$ \\
+% {$\rho_{23}$}   & $0.09$ & ---    & ---    & $0.38$ & $0.43$ & ---    & ---    & $0.00$ \\ 
+% \end{tabular}
+% \end{table}
+% \vspace{-2.25em}
+% \begin{table}[H]
+% \centering
+% \caption{RMSE and coverage of a 50\% CI for $\sigma_j$ and ${\rho}_{jk}$  for Friedman \#3 with $n_{\text{train}} = n_{\text{test}} =500$.}
+% \label{tab:sim_corr_fried_three_combined_500}
+% \begin{tabular}{lcccccccc}
+% \hline
+% \small
+% & \multicolumn{4}{c}{\textbf{RMSE}} & \multicolumn{4}{c}{\textbf{CI coverage}} \\
+%  & \textbf{suBART} & \textbf{BART} & \textbf{mvBART} & \textbf{BayesSUR} & \textbf{suBART} & \textbf{BART} & \textbf{mvBART} & \textbf{BayesSUR} \\
+% \hline
+% $d=2$ & & & & & & & & \\
+% \hline
+% {$\sigma_{1}$} & $0.05$ & $0.10$ & $0.06$ & $1.61$ & $0.30$ & $0.11$ & $0.32$ & $0.00$ \\
+% {$\sigma_{2}$} & $8.76$ & $12.2$ & $12.2$ & $61.7$ & $0.10$ & $0.02$ & $0.03$ & $0.00$ \\
+% {$\rho_{12}$}   & $0.04$ & ---    & $0.07$ & $0.56$ & $0.25$ & ---    & $0.16$ & $0.00$ \\ 
+% \hline
+% $d=3$ & & & & & & & & \\
+% \hline
+% {$\sigma_{1}$} & $0.04$ & $0.09$ & ---    & $1.61$ & $0.44$ & $0.08$ & ---    & $0.00$ \\
+% {$\sigma_{2}$} & $8.26$ & $12.1$ & ---    & $61.7$ & $0.11$ & $0.03$ & ---    & $0.00$ \\
+% {$\sigma_{3}$} & $0.01$ & $0.01$ & ---    & $0.12$ & $0.35$ & $0.34$ & ---    & $0.00$ \\
+% {$\rho_{12}$}   & $0.02$ & ---    & ---    & $0.60$ & $0.38$ & ---    & ---    & $0.00$ \\ 
+% {$\rho_{13}$}   & $0.05$ & ---    & ---    & $0.41$ & $0.41$ & ---    & ---    & $0.00$ \\
+% {$\rho_{23}$}   & $0.05$ & ---    & ---    & $0.37$ & $0.47$ & ---    & ---    & $0.00$ \\ 
+% \end{tabular}
+% \end{table}
+% \vspace{-2.25em}\enlargethispage{\baselineskip}
+% \begin{table}[H]
+% \centering
+% \caption{RMSE and coverage of a 50\% CI for $\sigma_j$ and ${\rho}_{jk}$  for Friedman \#3 with $n_{\text{train}} = n_{\text{test}} =1000$.}
+% \label{tab:sim_corr_fried_three_combined_1000}
+% \begin{tabular}{lcccccccc}
+% \hline
+% \small
+% & \multicolumn{4}{c}{\textbf{RMSE}} & \multicolumn{4}{c}{\textbf{CI coverage}} \\
+%  & \textbf{suBART} & \textbf{BART} & \textbf{mvBART} & \textbf{BayesSUR} & \textbf{suBART} & \textbf{BART} & \textbf{mvBART} & \textbf{BayesSUR} \\
+% \hline
+% $d=2$ & & & & & & & & \\
+% \hline
+% {$\sigma_1$} & $0.03$ & $0.03$ & $0.02$ & $1.62$ & $0.42$ & $0.32$ & $0.55$ & $0.00$ \\
+% {$\sigma_2$} & $4.98$ & $7.19$ & $5.56$ & $61.1$ & $0.19$ & $0.06$ & $0.24$ & $0.00$ \\
+% {$\rho_{12}$} & $0.02$ & --- & $0.05$ & $0.56$ & $0.46$ & --- & $0.06$ & $0.00$ \\ 
+% \hline
+% $d=3$ & & & & & & & & \\
+% \hline
+% {$\sigma_1$} & $0.02$ & $0.07$ & --- & $1.62$ & $0.38$ & $0.34$ & --- & $0.00$ \\
+% {$\sigma_2$} & $4.55$ & $10.2$ & --- & $61.1$ & $0.30$ & $0.06$ & --- & $0.00$ \\
+% {$\sigma_3$} & $0.01$ & $0.01$ & --- & $0.13$ & $0.53$ & $0.51$ & --- & $0.00$ \\
+% {$\rho_{12}$} & $0.01$ & --- & --- & $0.60$ & $0.44$ & --- & --- & $0.00$ \\ 
+% {$\rho_{13}$} & $0.02$ & --- & --- & $0.41$ & $0.51$ & --- & --- & $0.00$ \\
+% {$\rho_{23}$} & $0.03$ & --- & --- & $0.37$ & $0.45$ & --- & --- & $0.00$ \\ 
+% \end{tabular}
+% \end{table}
+
+\end{document}
