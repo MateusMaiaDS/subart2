@@ -382,11 +382,10 @@ void prune(Node *tree,
   unsigned int number_leaves = t_nodes.size();
   unsigned int number_nogs = nog_nodes.size();
 
-  // If the tree os a rooot
   if(number_nogs == 0){
     return; // Nothing to prune (stump)
-  } else if(tree->isRoot){
-    p_node = tree;
+  } else if(number_nogs == 1){
+    p_node = nog_nodes[0]; // Only one NOG (often the root for a shallow tree)
   } else {
     p_node = nog_nodes[arma::randi(arma::distr_param(0,(int)(number_nogs-1)))];
   }
