@@ -61,6 +61,13 @@ normalize_covariates_bart <- function(y, a = NULL, b = NULL) {
 
 #' Coverage for the prediction intervals
 #'
+#' @param y Numeric vector of observed responses.
+#' @param y_hat_post Matrix of posterior predictive mean samples (n x n_mcmc).
+#' @param sd_post Numeric vector of posterior standard deviation samples.
+#' @param prob Nominal coverage probability (default 0.5).
+#' @param n_mcmc_replications Number of Monte Carlo replications used to
+#'   approximate the coverage (default 1000).
+#'
 #' @export
 #'
 pi_coverage <- function(y, y_hat_post, sd_post, prob = 0.5,n_mcmc_replications = 1000){
@@ -108,6 +115,11 @@ pi_coverage <- function(y, y_hat_post, sd_post, prob = 0.5,n_mcmc_replications =
 }
 
 #' A function to calculate coverage of the credible interval
+#'
+#' @param f_true Numeric vector of true function values.
+#' @param f_post Matrix of posterior samples (n x n_mcmc).
+#' @param prob Nominal coverage probability (default 0.5).
+#'
 #' @export
 cr_coverage <- function(f_true, f_post, prob = 0.5){
 
@@ -182,6 +194,12 @@ naive_sigma <- function(x,y){
 
 
 #' Recoding variables
+#'
+#' @param x_train A \code{data.frame} of training covariates after dummy-variable
+#'   expansion.
+#' @param dummy_obj A dummy-variable object returned by
+#'   \code{caret::dummyVars}.
+#'
 #' @export
 #'
 recode_vars <- function(x_train, dummy_obj){
@@ -211,6 +229,9 @@ recode_vars <- function(x_train, dummy_obj){
 
 #' RMSE: Calculating the rmse
 #'
+#' @param x Numeric vector of predicted values.
+#' @param y Numeric vector of observed values.
+#'
 #' @export
 #'
 rmse <- function(x,y){
@@ -218,6 +239,11 @@ rmse <- function(x,y){
 }
 
 #' Calculating CRPS from (https://arxiv.org/pdf/1709.04743.pdf)
+#'
+#' @param y Numeric vector of observed values.
+#' @param means Numeric vector of predictive means.
+#' @param sds Numeric vector of predictive standard deviations.
+#'
 #' @export
 #'
 crps <- function(y,means,sds){
@@ -232,6 +258,12 @@ crps <- function(y,means,sds){
 
 
 #' Calculating a Frequentist confidence interval covarage
+#'
+#' @param y_ Numeric vector of observed values.
+#' @param y_hat_ Numeric vector of predicted means.
+#' @param sd_ Numeric vector of predicted standard deviations.
+#' @param prob_ Nominal coverage probability (default 0.5).
+#'
 #' @export
 #'
 ci_coverage <- function(y_,
@@ -249,6 +281,10 @@ ci_coverage <- function(y_,
 }
 
 #' Binary classification metrics
+#'
+#' @param y_true Integer vector of true binary labels (0/1).
+#' @param y_hat Numeric vector of predicted probabilities.
+#'
 #' @export
 logloss <- function(y_true, y_hat){
 
@@ -282,7 +318,10 @@ logloss <- function(y_true, y_hat){
 }
 
 #' Brier Score
-#
+#'
+#' @param y_true Integer vector of true binary labels (0/1).
+#' @param y_hat Numeric vector of predicted probabilities (values in [0, 1]).
+#'
 #' @export
 #'
 brierscore <- function(y_true, y_hat){
@@ -313,6 +352,9 @@ brierscore <- function(y_true, y_hat){
 
 #' Getting the accuracy
 #'
+#' @param y_true Integer vector of true binary labels (0/1).
+#' @param y_hat Integer vector of predicted binary labels (0/1).
+#'
 #' @export
 #'
 acc <- function(y_true, y_hat){
@@ -341,6 +383,9 @@ acc <- function(y_true, y_hat){
 }
 
 #' Getting the mcc
+#'
+#' @param y_true Integer vector of true binary labels (0/1).
+#' @param y_hat Integer vector of predicted binary labels (0/1).
 #'
 #' @export
 #'

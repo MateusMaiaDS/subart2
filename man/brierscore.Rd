@@ -6,6 +6,10 @@
 \usage{
 brierscore(y_true, y_hat)
 }
+\arguments{
+\item{y_true}{Integer vector of true binary labels (0/1).}
+\item{y_hat}{Numeric vector of predicted probabilities (values in [0, 1]).}
+}
 \description{
 Brier Score
 }

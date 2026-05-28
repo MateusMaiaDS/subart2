@@ -6,6 +6,11 @@
 \usage{
 cr_coverage(f_true, f_post, prob = 0.5)
 }
+\arguments{
+\item{f_true}{Numeric vector of true function values.}
+\item{f_post}{Matrix of posterior samples (n x n_mcmc).}
+\item{prob}{Nominal coverage probability (default 0.5).}
+}
 \description{
 A function to calculate coverage of the credible interval
 }

@@ -6,6 +6,10 @@
 \usage{
 recode_vars(x_train, dummy_obj)
 }
+\arguments{
+\item{x_train}{A \code{data.frame} of training covariates after dummy-variable expansion.}
+\item{dummy_obj}{A dummy-variable object returned by \code{caret::dummyVars}.}
+}
 \description{
 Recoding variables
 }

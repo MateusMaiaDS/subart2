@@ -6,7 +6,7 @@
 \usage{
 subart(
   x_train,
-  y_mat,
+  y_train,
   x_test = NULL,
   n_tree = 100,
   node_min_size = 5,
@@ -20,44 +20,50 @@ subart(
   numcut = 100L,
   usequants = FALSE,
   m = 20,
-  hier_prior_sigma = TRUE,
+  varimportance = TRUE,
+  hier_prior_bool = TRUE,
+  specify_variables = NULL,
   diagnostic = TRUE
 )
 }
 \arguments{
 \item{x_train}{A \code{data.frame} of the training data covariates.}
 
-\item{y_mat}{A numeric matrix of the data responses.}
+\item{y_train}{A numeric matrix of the data responses. (Formerly \code{y_mat}; that name is still accepted for backward compatibility.)}
 
 \item{x_test}{A \code{data.frame} of the test data covariates.}
 
 \item{n_tree}{The number of trees used in each set of trees for the respective \eqn{j} entry. The total number of trees is given by \eqn{j \times p}.}
 
-\item{node_min_size}{The minimun number of observations within a terminal node.}
+\item{node_min_size}{The minimum number of observations within a terminal node.}
 
 \item{n_mcmc}{The total number of MCMC iterations.}
 
-\item{n_burn}{The number of MCMC iterations to be tretead as burn in samples}
+\item{n_burn}{The number of MCMC iterations to be treated as burn-in samples.}
 
-\item{alpha}{The power parameter used in tree prior.}
+\item{alpha}{The power parameter used in the tree prior.}
 
-\item{beta}{The base parameter used in tree prior.}
+\item{beta}{The base parameter used in the tree prior.}
 
 \item{nu}{The \eqn{\nu} parameter associated with the degree of freedom from the variance prior.}
 
-\item{sigquant}{Quantile used to define the residuals variance. Remind that the prior definition is based on \eqn{P(\sigma^{(j)} < \hat{\sigma}^{(j)})} where \eqn{\hat{\sigma}^{(j)}} is a "rough data-based estimation" for example, the sample variance of the observed \eqn{y^{(j)}} values.}
+\item{sigquant}{Quantile used to define the residuals variance. The prior is defined so that \eqn{P(\sigma^{(j)} < \hat{\sigma}^{(j)})} equals \code{sigquant}, where \eqn{\hat{\sigma}^{(j)}} is a rough data-based estimate (e.g., the sample standard deviation of \eqn{y^{(j)}}).}
 
-\item{kappa}{Hyper-parameter from the \eqn{\mu_{t\ell}^{(j)}} (Chipman et. al 2010). Such that \eqn{\sigma} = 0.25}
+\item{kappa}{Hyper-parameter controlling the width of the leaf-node mean prior (Chipman et al. 2010). Together with \code{n_tree}, it implies \eqn{\sigma_\mu = 0.5 / (\kappa \sqrt{m})}.}
 
-\item{numcut}{The maximum number of possible values used in the tree decision rules. The uniform approximation for choose a decision rule over \eqn{X^{(j)}} is given a grid of size \code{numcut}.}
+\item{numcut}{The maximum number of candidate split values for each predictor. When \code{usequants = FALSE} a uniform grid of size \code{numcut} is used.}
 
-\item{usequants}{Boolean; if true the quantiles are going to be used to define the grid of cutpoints.}
+\item{usequants}{Logical; if \code{TRUE} the empirical quantiles of each predictor define the candidate split points.}
 
-\item{m}{Hyperparameter used in the definition of the prior setting of the correlation matrix for the Probit-Multivariate approach.}
+\item{m}{Hyperparameter for the prior on the correlation matrix in the Probit-Multivariate approach.}
 
-\item{hier_prior_sigma}{Boolean; if true the prior for Sigma is defined using the hierachical prior as defined by Esser & Maia et. al 2025. See details for reference.}
+\item{varimportance}{Logical; if \code{TRUE} variable importance counts are accumulated and returned.}
 
-\item{diagnostic}{a boolean to compute or not the ESS for the posterior samples of the \eqn{\boldsymbol{\Sigma}}}
+\item{hier_prior_bool}{Logical; if \code{TRUE} the prior for \eqn{\Sigma} uses the hierarchical half-\eqn{t} prior of Esser \& Maia et al. (2025). If \code{FALSE} an inverse-Wishart prior is used instead.}
+
+\item{specify_variables}{Optional integer vector specifying a subset of predictor column indices to use. \code{NULL} (default) uses all predictors.}
+
+\item{diagnostic}{Logical; if \code{TRUE} the effective sample size (ESS) of the posterior samples of \eqn{\boldsymbol{\Sigma}} is computed and returned.}
 }
 \value{
 In case of a continuous response the model returns
