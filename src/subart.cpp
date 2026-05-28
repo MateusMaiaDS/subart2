@@ -247,7 +247,7 @@ Rcpp::List cppsubart(arma::mat x_train,
                 if(verb < 0.3) {
                   data.move_proposal.at(0)++;
                   grow(all_trees[curr_tree_counter],data,partial_residuals,partial_u,j);
-                } else if((verb >= 0.3) & (verb < 6.0)){
+                } else if((verb >= 0.3) & (verb < 0.6)){
                   data.move_proposal.at(1)++;
                   prune(all_trees[curr_tree_counter],data,partial_residuals,partial_u,j);
                 } else {
