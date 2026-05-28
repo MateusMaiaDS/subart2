@@ -383,10 +383,12 @@ void prune(Node *tree,
   unsigned int number_nogs = nog_nodes.size();
 
   // If the tree os a rooot
-  if(tree->isRoot){
+  if(number_nogs == 0){
+    return; // Nothing to prune (stump)
+  } else if(tree->isRoot){
     p_node = tree;
   } else {
-    p_node = t_nodes[arma::randi(arma::distr_param(0,(number_nogs-1)))];
+    p_node = nog_nodes[arma::randi(arma::distr_param(0,(int)(number_nogs-1)))];
   }
 
   for(auto& leaf:t_nodes){
@@ -475,10 +477,12 @@ void change(Node *tree,
   unsigned int number_leaves = t_nodes.size();
 
   // If the tree os a root
-  if(nog_nodes.size()==1){
+  if(nog_nodes.size() == 0){
+    return; // No NOGs to change (stump)
+  } else if(nog_nodes.size()==1){
     c_node = nog_nodes[0];
   } else {
-    c_node = nog_nodes[arma::randi(arma::distr_param(0,(number_leaves-1)))];
+    c_node = nog_nodes[arma::randi(arma::distr_param(0,(int)(nog_nodes.size()-1)))];
   }
 
   for(auto& leaf:t_nodes){
