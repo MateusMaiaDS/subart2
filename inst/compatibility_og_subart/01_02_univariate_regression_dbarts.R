@@ -1,6 +1,6 @@
 # =============================================================================
-# 01_univariate_regression.R
-# Comparison: subart (original) vs subart2 — Univariate Regression
+# 01_02_univariate_regression.R
+# Comparison: dbarts  vs subart2 — Univariate Regression
 # =============================================================================
 # Scenario: Friedman-1 single-response regression
 #   y = 10*sin(pi*x1*x2) + 20*(x3-0.5)^2 + 10*x4 + 5*x5 + N(0,1)

@@ -45,18 +45,18 @@ cat(sprintf("n_train=%d  n_test=%d  p=%d\n", n_tr, n_te, p))
 
 # ---- Fit models -------------------------------------------------------------
 
-MCMC_SETTINGS <- list(n_tree = 50, n_mcmc = 1000, n_burn = 200,
-                      varimportance = TRUE, diagnostic = FALSE)
+MCMC_SETTINGS <- list(n_tree = 20, n_mcmc = 1000, n_burn = 200,
+                      varimportance = TRUE, diagnostic = TRUE)
 
 time_og <- system.time({
-  fit_og <- do.call(dbarts,
+  fit_og <- do.call(subart::subart,
                     c(list(x_train = x_train, y_train = y_train,
                            x_test  = x_test),
                       MCMC_SETTINGS))
 })
 
 time_new <- system.time({
-  fit_new <- do.call(subart::subart,
+  fit_new <- do.call(subart2::subart,
                      c(list(x_train = x_train, y_train = y_train,
                             x_test  = x_test),
                        MCMC_SETTINGS))
