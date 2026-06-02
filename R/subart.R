@@ -645,13 +645,13 @@ subart <- function(x_train,
 
     } else {
 
+      ESS_warn <- FALSE
 
       # Calculate the ESS for all parameters throw a warning if any of them is smaller than half of the MCMC samples
       if(diagnostic){
 
         diagnostic_bool = FALSE
         ESS_val <- ESS(x = Sigma_post)
-        ESS_warn <- FALSE
 
         if(ESS_val<round((n_mcmc-n_burn)/2,digits = 0)){
           ESS_warn <- TRUE
@@ -765,10 +765,11 @@ subart <- function(x_train,
     # Getting the list of outcomes
     if(class_model){
 
+      ESS_warn <- FALSE
+
       # ESS on correlation matrix (Sigma already normalised to R in cppsubart_CLASS)
       if(diagnostic && !is.null(Sigma_post)){
         ESS_val <- matrix(NA, nrow = dim(Sigma_post)[1], ncol = dim(Sigma_post)[2])
-        ESS_warn <- FALSE
         d_ <- dim(Sigma_post)[1]
         for(i in 1:d_){
           j = i
