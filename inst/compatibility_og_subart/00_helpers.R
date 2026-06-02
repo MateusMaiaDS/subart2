@@ -9,9 +9,15 @@
 # ---- Package checks ---------------------------------------------------------
 
 check_and_install <- function(pkg, repo) {
-  if (!requireNamespace(pkg, quietly = TRUE)) {
+  if (!requireNamespace("remotes", quietly = TRUE)) install.packages("remotes")
+  if (pkg == "subart2") {
+    # Always install from the phase2-cpp branch to ensure C++14 build and
+    # latest varimportance / classification features are present.
+    message("Installing subart2 from feat/phase2-cpp branch ...")
+    remotes::install_github("MateusMaiaDS/subart2", ref = "feat/phase2-cpp",
+                            upgrade = "never", quiet = FALSE)
+  } else if (!requireNamespace(pkg, quietly = TRUE)) {
     message(sprintf("Package '%s' not found. Installing from GitHub (%s) ...", pkg, repo))
-    if (!requireNamespace("remotes", quietly = TRUE)) install.packages("remotes")
     remotes::install_github(repo)
   }
 }
