@@ -118,6 +118,10 @@ modelParam::modelParam(arma::mat x_train_,
   // Decide to wether update the fit_test or not;
   fit_test = fit_test_;
 
+  // Default: all predictors allowed for all responses
+  sv_bool = false;
+  sv_matrix = arma::ones<arma::umat>(d, p);
+
 }
 
 // Initialising the model Param
@@ -192,5 +196,9 @@ modelParam_uni::modelParam_uni(arma::mat x_train_,
   }
 
   categorical_indicators_bool = count_cat_indicator==0 ? false: true;
+
+  // Default: all predictors allowed
+  sv_bool = false;
+  sv_matrix = arma::ones<arma::umat>(1, p);
 
 }

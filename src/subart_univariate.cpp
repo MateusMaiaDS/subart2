@@ -22,7 +22,10 @@ Rcpp::List cppsubart_univariate(arma::mat x_train,
                         double A_j,
                         bool hier_prior_sigma,
                         arma::uvec categorical_indicators,
-                        bool fit_test){
+                        bool fit_test,
+                        bool varimportance,
+                        bool sv_bool,
+                        arma::umat sv_matrix){
 
 
   // Posterior counter
@@ -49,6 +52,12 @@ Rcpp::List cppsubart_univariate(arma::mat x_train,
                   fit_test);
 
 
+  // Wire specify_variables into data struct
+  if (sv_bool) {
+    data.sv_bool   = true;
+    data.sv_matrix = sv_matrix;
+  }
+
   // Getting n_post
   unsigned int n_post = n_mcmc - n_burn;
 
@@ -63,10 +72,8 @@ Rcpp::List cppsubart_univariate(arma::mat x_train,
   arma::mat trees_fit_store_test(data.n_test,data.n_tree,arma::fill::zeros);
 
 
-  // Setting a vector to store the variables used in the split
-  ///  ....
-  /// [PLACE HOLDER - built it later]
-  ///
+  // var_imp_post: n_post × p
+  arma::mat var_imp_post(n_post, data.p, arma::fill::zeros);
 
   double verb;
 
@@ -153,10 +160,10 @@ Rcpp::List cppsubart_univariate(arma::mat x_train,
         }
 
         // Selecting each verb -- Here I considering the probability of Grow:0.3, Prune: 0.3, and Change = 0.4 -- May need to reavulate those
-        if(verb < 0.5) {
+        if(verb < 0.3) {
           data.move_proposal.at(0)++;
           grow_uni(all_trees[t],data,partial_residuals);
-        } else if((verb >= 0.5) & (verb < 1.0)){
+        } else if((verb >= 0.3) & (verb < 0.6)){
           data.move_proposal.at(1)++;
           prune_uni(all_trees[t],data,partial_residuals);
         } else {
@@ -205,6 +212,15 @@ Rcpp::List cppsubart_univariate(arma::mat x_train,
       }
 
       sigma_post[curr] = data.sigma_sq;
+
+      if (varimportance) {
+        arma::uvec vcounts(data.p, arma::fill::zeros);
+        for (unsigned int tt = 0; tt < data.n_tree; tt++) {
+          get_var_counts(all_trees[tt], vcounts);
+        }
+        var_imp_post.row(curr) = arma::conv_to<arma::rowvec>::from(vcounts);
+      }
+
       curr++;
 
     }
@@ -218,5 +234,6 @@ Rcpp::List cppsubart_univariate(arma::mat x_train,
   return Rcpp::List::create(y_train_hat_post, //[1]
                             y_test_hat_post, //[2]
                             sigma_post, //[3]
-                            all_sigma_post); // [4];
+                            all_sigma_post, // [4]
+                            var_imp_post); // [5]
 }

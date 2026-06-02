@@ -22,7 +22,10 @@ Rcpp::List cppsubart_2d(arma::mat x_train,
                      arma::vec A_j_vec,
                      bool hier_prior_sigma,
                      arma::uvec categorical_indicators,
-                     bool fit_test){
+                     bool fit_test,
+                     bool varimportance,
+                     bool sv_bool,
+                     arma::umat sv_matrix){
 
 
   // Posterior counter
@@ -52,6 +55,13 @@ Rcpp::List cppsubart_2d(arma::mat x_train,
   if(data.d<2){
     throw std::invalid_argument(" The y response should cannot be unidimensional for subart call");
   }
+
+  // Wire specify_variables into data struct
+  if (sv_bool) {
+    data.sv_bool   = true;
+    data.sv_matrix = sv_matrix;
+  }
+
   // Getting n_post
   unsigned int n_post = n_mcmc - n_burn;
 
@@ -67,9 +77,8 @@ Rcpp::List cppsubart_2d(arma::mat x_train,
 
 
   // Setting a vector to store the variables used in the split
-  ///  ....
-  /// [PLACE HOLDER - built it later]
-  ///
+  // var_imp_post: d × p × n_post (accumulated per posterior draw per response)
+  arma::cube var_imp_post(data.d, data.p, n_post, arma::fill::zeros);
 
   double verb;
 
@@ -275,6 +284,17 @@ Rcpp::List cppsubart_2d(arma::mat x_train,
       }
 
       Sigma_post.slice(curr) = data.Sigma;
+
+      if (varimportance) {
+        for (unsigned int jj = 0; jj < data.d; jj++) {
+          arma::uvec vcounts(data.p, arma::fill::zeros);
+          for (unsigned int tt = 0; tt < data.n_tree; tt++) {
+            get_var_counts(all_trees[tt + jj * data.n_tree], vcounts);
+          }
+          var_imp_post.slice(curr).row(jj) = arma::conv_to<arma::rowvec>::from(vcounts);
+        }
+      }
+
       curr++;
 
     }
@@ -288,5 +308,6 @@ Rcpp::List cppsubart_2d(arma::mat x_train,
   return Rcpp::List::create(y_train_hat_post, //[1]
                             y_test_hat_post, //[2]
                             Sigma_post, //[3]
-                            all_Sigma_post); // [4];
+                            all_Sigma_post, // [4]
+                            var_imp_post); // [5]
 }

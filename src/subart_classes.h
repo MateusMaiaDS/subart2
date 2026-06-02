@@ -62,6 +62,11 @@ struct modelParam {
   // A boolean to update or not the test
   bool fit_test;
 
+  // specify_variables support: sv_bool=true restricts split variable selection
+  // sv_matrix is d×p binary; sv_matrix(j,k)=1 means response j may use predictor k
+  bool sv_bool;
+  arma::umat sv_matrix;
+
   // Defining the constructor for the model param
   modelParam(arma::mat x_train_,
              arma::mat y_mat_,
@@ -131,6 +136,11 @@ struct modelParam_uni {
 
   // Creating a boolean to know if will fit the test or not
   bool fit_test;
+
+  // specify_variables support: sv_bool=true restricts split variable selection
+  // sv_matrix is 1×p binary; sv_matrix(0,k)=1 means predictor k is allowed
+  bool sv_bool;
+  arma::umat sv_matrix;
 
   // Defining the constructor for the model param
   modelParam_uni(arma::mat x_train_,

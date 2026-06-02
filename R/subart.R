@@ -264,11 +264,12 @@ subart <- function(x_train,
   # =========
 
   if(class_model){
-    # Call the bart function
-    if(is.null(Sigma_init) || NCOL(y_mat)==1){
-      Sigma_init <- diag(1,nrow = NCOL(y_mat))
-    }
+    # For probit suBART, correlation matrix prior starts at identity (diag = 1)
+    Sigma_init <- diag(1, nrow = NCOL(y_mat))
     mu_init <- apply(y_mat,2,mean,na.rm = TRUE)
+    # S_0_wish: identity-scaled IW prior for correlation matrix
+    S_0_wish <- diag(1, nrow = NCOL(y_mat))
+    A_j <- rep(0, NCOL(y_mat))
 
     df <- nu + ncol(y_mat_scale) - 1
     # No extra parameters are need to calculate for the class model
@@ -341,55 +342,56 @@ subart <- function(x_train,
 
   # Generating the BART obj
   if(class_model){
-    stop("Not available yet.")
 
     if(ncol(y_mat_scale)==1 ){ # For the univariate case
       na_boolean <- FALSE
-      bart_obj <- cppbart_univariate_CLASS(x_train_scale,
-                                           y_mat_scale,
-                                           x_test_scale,
-                                           xcut_m,
-                                           n_tree,
-                                           node_min_size,
-                                           n_mcmc,
-                                           n_burn,
-                                           Sigma_init,
-                                           mu_init,
-                                           sigma_mu_j,
-                                           nu,
-                                           alpha,beta,
-                                           m,update_Sigma,
-                                           varimportance,
-                                           tn_sampler,
-                                           categorical_indicators)
+      y_bin_vec <- as.integer(c(y_mat_scale))
+      bart_obj <- cppsubart_univariate_CLASS(x_train_scale,
+                                             y_bin_vec,
+                                             x_test_scale,
+                                             xcut_m,
+                                             n_tree,
+                                             node_min_size,
+                                             n_mcmc,
+                                             n_burn,
+                                             mu_init,
+                                             sigma_mu_j,
+                                             alpha, beta,
+                                             categorical_indicators,
+                                             fit_test,
+                                             varimportance,
+                                             sv_bool,
+                                             sv_matrix)
     } else {
 
-      stop("Not available yet.")
-
       if(any(is.na(y_mat_scale))){
-        y_mat_scale[is.na(y_mat_scale)] <- -1
+        y_mat_scale[is.na(y_mat_scale)] <- 0L
         na_boolean <- TRUE
       } else {
         na_boolean <- FALSE
       }
 
-      bart_obj <- cppbart_CLASS(x_train_scale,
-                                y_mat_scale,
-                                x_test_scale,
-                                xcut_m,
-                                n_tree,
-                                node_min_size,
-                                n_mcmc,
-                                n_burn,
-                                Sigma_init,
-                                mu_init,
-                                sigma_mu_j,
-                                nu,
-                                alpha,beta,
-                                m,update_Sigma,
-                                varimportance,
-                                tn_sampler,
-                                categorical_indicators)
+      y_bin_mat <- matrix(as.integer(y_mat_scale), nrow = nrow(y_mat_scale), ncol = ncol(y_mat_scale))
+      bart_obj <- cppsubart_CLASS(x_train_scale,
+                                  y_bin_mat,
+                                  x_test_scale,
+                                  xcut_m,
+                                  n_tree,
+                                  node_min_size,
+                                  n_mcmc,
+                                  n_burn,
+                                  Sigma_init,
+                                  mu_init,
+                                  sigma_mu_j,
+                                  alpha, beta, nu,
+                                  S_0_wish,
+                                  A_j,
+                                  m,
+                                  categorical_indicators,
+                                  fit_test,
+                                  varimportance,
+                                  sv_bool,
+                                  sv_matrix)
     }
 
   } else {
@@ -414,7 +416,10 @@ subart <- function(x_train,
                                      A_j,
                                      hier_prior_bool,
                                      categorical_indicators,
-                                     fit_test)
+                                     fit_test,
+                                     varimportance,
+                                     sv_bool,
+                                     sv_matrix)
     } else {
 
 
@@ -445,7 +450,10 @@ subart <- function(x_train,
                                     A_j,
                                     hier_prior_bool,
                                     categorical_indicators,
-                                    fit_test)
+                                    fit_test,
+                                    varimportance,
+                                    sv_bool,
+                                    sv_matrix)
         } else {
           cppsubart_missing(x_train_scale,
                             y_mat_scale,
@@ -465,7 +473,10 @@ subart <- function(x_train,
                             A_j,
                             hier_prior_bool,
                             categorical_indicators,
-                            fit_test)
+                            fit_test,
+                            varimportance,
+                            sv_bool,
+                            sv_matrix)
         }
 
       } else {
@@ -488,7 +499,10 @@ subart <- function(x_train,
                        A_j,
                        hier_prior_bool,
                        categorical_indicators,
-                       fit_test)
+                       fit_test,
+                       varimportance,
+                       sv_bool,
+                       sv_matrix)
         } else {
           cppsubart(x_train_scale,
                     y_mat_scale,
@@ -506,7 +520,10 @@ subart <- function(x_train,
                     A_j,
                     hier_prior_bool,
                     categorical_indicators,
-                    fit_test)
+                    fit_test,
+                    varimportance,
+                    sv_bool,
+                    sv_matrix)
         }
 
       }
@@ -518,17 +535,39 @@ subart <- function(x_train,
   # Returning the main components from the model
   y_train_post <- bart_obj[[1]]
   y_test_post <- bart_obj[[2]]
-  y_mat_post <-if(na_boolean){
-    bart_obj[[5]]
-  } else {
-    NULL
-  }
-  Sigma_post <- bart_obj[[3]]
-  all_Sigma_post <- bart_obj[[4]]
 
-  # varimportance is a stub until C++ support is added (Phase 2)
-  var_importance <- NULL
-  var_importance_raw <- NULL
+  # For classification, extract Sigma_post only for multivariate case
+  if (class_model) {
+    if (ncol(y_mat) == 1) {
+      # cppsubart_univariate_CLASS: [[1]] y_train, [[2]] y_test, [[3]] var_imp
+      Sigma_post     <- NULL
+      all_Sigma_post <- NULL
+      y_mat_post     <- NULL
+      var_importance_raw <- if (varimportance) bart_obj[[3]] else NULL
+    } else {
+      # cppsubart_CLASS: [[1]] y_train, [[2]] y_test, [[3]] Sigma, [[4]] all_Sigma, [[5]] var_imp
+      Sigma_post     <- bart_obj[[3]]
+      all_Sigma_post <- bart_obj[[4]]
+      y_mat_post     <- NULL
+      var_importance_raw <- if (varimportance) bart_obj[[5]] else NULL
+    }
+    var_importance <- if (varimportance && !is.null(var_importance_raw)) {
+      if (is.matrix(var_importance_raw)) colMeans(var_importance_raw) else apply(var_importance_raw, c(1, 2), mean)
+    } else NULL
+  } else {
+    Sigma_post     <- bart_obj[[3]]
+    all_Sigma_post <- bart_obj[[4]]
+    if (na_boolean) {
+      y_mat_post         <- bart_obj[[5]]
+      var_importance_raw <- if (varimportance) bart_obj[[6]] else NULL
+    } else {
+      y_mat_post         <- NULL
+      var_importance_raw <- if (varimportance) bart_obj[[5]] else NULL
+    }
+    var_importance <- if (varimportance && !is.null(var_importance_raw)) {
+      if (is.matrix(var_importance_raw)) colMeans(var_importance_raw) else apply(var_importance_raw, c(1, 2), mean)
+    } else NULL
+  }
 
 
   Sigma_scale <- if(ncol(y_mat)!=1){
@@ -550,7 +589,7 @@ subart <- function(x_train,
 
     Sigma_scale <- c(Sigma_scale)
 
-    if(scale_y){
+    if(scale_y && !class_model){
 
       # Re-scaling Sigma_all, important to cover convergence issues.
       Sigma_post <- Sigma_post * (Sigma_scale)^2
@@ -558,69 +597,43 @@ subart <- function(x_train,
       y_train_post <- unnormalize_bart_matrix(y_train_post,min_y,max_y)
       y_test_post <- unnormalize_bart(y_test_post,min_y,max_y)
 
+    } else if(scale_y && class_model){
+
+      y_train_post <- unnormalize_bart_matrix(y_train_post,min_y,max_y)
+      y_test_post <- unnormalize_bart(y_test_post,min_y,max_y)
+
     }
 
-    Sigma_post_mean <- mean(Sigma_post)
+    Sigma_post_mean <- if(!class_model) mean(Sigma_post) else NULL
     y_hat_mean <- apply(y_train_post,1,mean)
 
     y_test_mean <- apply(y_test_post,1,mean)
 
 
-    sigmas_mean <- sqrt(Sigma_post_mean)
+    sigmas_mean <- if(!class_model) sqrt(Sigma_post_mean) else NULL
 
     # Transforming to classification context
 
     # Getting the list of outcomes
     if(class_model){
 
-      # Calculate the ESS for all parameters throw a warning if any of them is smaller than half of the MCMC samples
-      if(diagnostic){
-
-        diagnostic_bool = FALSE
-        ESS_val <- matrix(NA, nrow = nrow(Sigma_post), ncol = ncol(Sigma_post))
-        ESS_warn <- FALSE
-        for(i in 1:nrow(Sigma_post)){
-          # ESS_val[i,i] <- ESS(x = Sigma_post[i,i,]) # For classification there's no sample
-          j = i
-          while(j < nrow(Sigma_post)){
-            j = j+1
-            ESS_val[i,j] <- ESS_val[j,i] <- ESS(x = Sigma_post[i,j,]/(sqrt(Sigma_post[i,i,])*sqrt(Sigma_post[j,j,])))
-            if(ESS_val[i,j]<round((n_mcmc-n_burn)/2,digits = 0)){
-              ESS_warn <- TRUE
-            }
-          }
-        }
-
-      } else {
-        ESS_val <- NULL
-      }
-
-      if(ESS_warn){
-        warning(paste0("A ESS less than ",round((n_mcmc-n_burn)/2,digits = 0)," was obtanied. Verify the traceplots and adjust the priors to improve the sampling."))
-      }
-
-
-
+      # No Sigma samples in probit-BART; skip ESS on Sigma
+      ESS_val  <- NULL
+      ESS_warn <- FALSE
 
       list_obj_ <- list(y_hat = y_train_post,
                         y_hat_test = y_test_post,
-                        y_hat_mean = y_mat_mean,
+                        y_hat_mean = y_hat_mean,
                         y_hat_test_mean = y_test_mean,
-                        y_hat_mean_class = apply(y_hat_mean,2,function(x){ifelse(x>0,1,0)}),
-                        y_hat_test_mean_class = apply(y_test_mean,2,function(x){ifelse(x>0,1,0)}),
-                        Sigma_post = Sigma_post,
-                        Sigma_post_mean = Sigma_post_mean,
-                        sigmas_post = bart_obj[[7]],
-                        all_Sigma_post = all_Sigma_post,
+                        y_hat_mean_class = ifelse(y_hat_mean > 0, 1L, 0L),
+                        y_hat_test_mean_class = ifelse(apply(y_test_post, 1, mean) > 0, 1L, 0L),
                         var_importance = var_importance,
                         var_importance_raw = var_importance_raw,
                         prior = list(n_tree = n_tree,
                                      alpha = alpha,
                                      beta = beta,
                                      tau_mu_j = tau_mu_j,
-                                     mu_init = mu_init,
-                                     tree_proposal = bart_obj[[5]],
-                                     tree_acceptance = bart_obj[[6]]),
+                                     mu_init = mu_init),
                         mcmc = list(n_mcmc = n_mcmc,
                                     n_burn = n_burn),
                         data = list(x_train = x_train,
@@ -632,13 +645,13 @@ subart <- function(x_train,
 
     } else {
 
+      ESS_warn <- FALSE
 
       # Calculate the ESS for all parameters throw a warning if any of them is smaller than half of the MCMC samples
       if(diagnostic){
 
         diagnostic_bool = FALSE
         ESS_val <- ESS(x = Sigma_post)
-        ESS_warn <- FALSE
 
         if(ESS_val<round((n_mcmc-n_burn)/2,digits = 0)){
           ESS_warn <- TRUE
@@ -749,47 +762,40 @@ subart <- function(x_train,
 
     # Transforming to classification context
 
+    ESS_warn <- FALSE
+
     # Getting the list of outcomes
     if(class_model){
 
-      # Calculate the ESS for all parameters throw a warning if any of them is smaller than half of the MCMC samples
-      if(diagnostic){
-
-        diagnostic_bool = FALSE
-        ESS_val <- matrix(NA, nrow = nrow(Sigma_post), ncol = ncol(Sigma_post))
-        ESS_warn <- FALSE
-        for(i in 1:nrow(Sigma_post)){
-          # ESS_val[i,i] <- ESS(x = Sigma_post[i,i,]) # For classification there's no sample
+      # ESS on correlation matrix (Sigma already normalised to R in cppsubart_CLASS)
+      if(diagnostic && !is.null(Sigma_post)){
+        ESS_val <- matrix(NA, nrow = dim(Sigma_post)[1], ncol = dim(Sigma_post)[2])
+        d_ <- dim(Sigma_post)[1]
+        for(i in 1:d_){
           j = i
-          while(j < nrow(Sigma_post)){
-            j = j+1
-            ESS_val[i,j] <- ESS_val[j,i] <- ESS(x = Sigma_post[i,j,]/(sqrt(Sigma_post[i,i,])*sqrt(Sigma_post[j,j,])))
-            if(ESS_val[i,j]<round((n_mcmc-n_burn)/2,digits = 0)){
+          while(j < d_){
+            j = j + 1
+            ESS_val[i,j] <- ESS_val[j,i] <- ESS(x = Sigma_post[i,j,])
+            if(ESS_val[i,j] < round((n_mcmc-n_burn)/2, digits=0)){
               ESS_warn <- TRUE
             }
           }
         }
-
+        if(ESS_warn){
+          warning(paste0("A ESS less than ",round((n_mcmc-n_burn)/2,digits=0)," was obtained."))
+        }
       } else {
         ESS_val <- NULL
       }
-
-      if(ESS_warn){
-        warning(paste0("A ESS less than ",round((n_mcmc-n_burn)/2,digits = 0)," was obtanied. Verify the traceplots and adjust the priors to improve the sampling."))
-      }
-
-
-
 
       list_obj_ <- list(y_hat = y_train_post,
                         y_hat_test = y_test_post,
                         y_hat_mean = y_mat_mean,
                         y_hat_test_mean = y_mat_test_mean,
                         y_hat_mean_class = apply(y_mat_mean,2,function(x){ifelse(x>0,1,0)}),
-                        y_hat_test_mean_class = apply(y_mat_test_mean,2,function(x){ifelse(x>0,1,0)}),
+                        y_hat_test_mean_class = if(!is.null(y_mat_test_mean)) apply(y_mat_test_mean,2,function(x){ifelse(x>0,1,0)}) else NULL,
                         Sigma_post = Sigma_post,
                         Sigma_post_mean = Sigma_post_mean,
-                        sigmas_post = bart_obj[[7]],
                         all_Sigma_post = all_Sigma_post,
                         var_importance = var_importance,
                         var_importance_raw = var_importance_raw,
@@ -797,9 +803,7 @@ subart <- function(x_train,
                                      alpha = alpha,
                                      beta = beta,
                                      tau_mu_j = tau_mu_j,
-                                     mu_init = mu_init,
-                                     tree_proposal = bart_obj[[5]],
-                                     tree_acceptance = bart_obj[[6]]),
+                                     mu_init = mu_init),
                         mcmc = list(n_mcmc = n_mcmc,
                                     n_burn = n_burn),
                         data = list(x_train = x_train,

@@ -152,3 +152,71 @@ test_that("specify_variables with wrong length raises an error", {
     "specify_variables must be a list with one element per response column"
   )
 })
+
+# -----------------------------------------------------------------------
+# 7.  varimportance (Phase 2)
+# -----------------------------------------------------------------------
+test_that("varimportance=TRUE returns non-NULL for univariate (d=1)", {
+  y1 <- make_y(1)
+  fit <- do.call(subart, c(list(x_train = X, y_train = y1,
+                                varimportance = TRUE), fast_args))
+  expect_false(is.null(fit$var_importance))
+  expect_equal(length(fit$var_importance), p)
+  expect_true(all(fit$var_importance >= 0))
+})
+
+test_that("varimportance=TRUE returns non-NULL for bivariate (d=2)", {
+  y2 <- make_y(2)
+  fit <- do.call(subart, c(list(x_train = X, y_train = y2,
+                                varimportance = TRUE), fast_args))
+  expect_false(is.null(fit$var_importance))
+  expect_equal(dim(fit$var_importance), c(2L, p))
+})
+
+test_that("varimportance=TRUE returns non-NULL for d=3", {
+  y3 <- make_y(3)
+  fit <- do.call(subart, c(list(x_train = X, y_train = y3,
+                                varimportance = TRUE), fast_args))
+  expect_false(is.null(fit$var_importance))
+  expect_equal(dim(fit$var_importance), c(3L, p))
+})
+
+# -----------------------------------------------------------------------
+# 8.  specify_variables (Phase 2)
+# -----------------------------------------------------------------------
+test_that("specify_variables restricts predictors without error (d=2)", {
+  y2 <- make_y(2)
+  fit <- do.call(subart, c(
+    list(x_train = X, y_train = y2,
+         specify_variables = list(1:3, 2:4)),  # subset of 5 predictors
+    fast_args
+  ))
+  expect_s3_class(fit, "subart")
+  expect_equal(dim(fit$y_hat_mean), c(n, 2L))
+})
+
+# -----------------------------------------------------------------------
+# 9.  Classification / probit paths (Phase 2)
+# -----------------------------------------------------------------------
+test_that("binary d=1 classification runs and returns predicted classes", {
+  y_bin <- as.integer(rnorm(n) > 0)
+  fit <- do.call(subart, c(
+    list(x_train = X, y_train = matrix(y_bin, ncol = 1)),
+    fast_args
+  ))
+  expect_s3_class(fit, "subart-probit")
+  # y_hat_mean is the latent-Z posterior mean; y_hat_mean_class is 0/1
+  expect_equal(length(fit$y_hat_mean), n)
+  expect_true(all(fit$y_hat_mean_class %in% c(0L, 1L)))
+})
+
+test_that("binary d=2 classification runs and returns predicted classes", {
+  y_bin2 <- matrix(as.integer(matrix(rnorm(n * 2), n, 2) > 0), n, 2)
+  fit <- do.call(subart, c(
+    list(x_train = X, y_train = y_bin2),
+    fast_args
+  ))
+  expect_s3_class(fit, "subart-probit")
+  expect_equal(dim(fit$y_hat_mean), c(n, 2L))
+  expect_true(all(fit$y_hat_mean_class %in% c(0L, 1L)))
+})

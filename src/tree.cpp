@@ -152,6 +152,15 @@ double sample_split_var_rule_from_xcut(arma::vec& xcut_col, double lower_candida
   return *(start + random_index);
 }
 
+// Recursively count variable usage at internal nodes
+void get_var_counts(Node* tree, arma::uvec& counts) {
+  if (!tree->isLeaf) {
+    counts[tree->var_split]++;
+    get_var_counts(tree->left,  counts);
+    get_var_counts(tree->right, counts);
+  }
+}
+
 void grow(Node *tree,
           modelParam &data,
           arma::vec &curr_res,
@@ -185,9 +194,15 @@ void grow(Node *tree,
     return;
   }
 
-  // Selecting a splitting variable and a split rule
-  //(explore the logic of selecting a good candidate for the split rule)
-  unsigned int var_split_candidate = arma::randi<arma::uword>(arma::distr_param(0, data.p - 1));
+  // Selecting a splitting variable, respecting specify_variables if active
+  unsigned int var_split_candidate;
+  if (data.sv_bool) {
+    arma::uvec allowed = arma::find(data.sv_matrix.row(j) == 1);
+    if (allowed.is_empty()) return;
+    var_split_candidate = allowed[arma::randi<arma::uword>(arma::distr_param(0, (int)(allowed.n_elem - 1)))];
+  } else {
+    var_split_candidate = arma::randi<arma::uword>(arma::distr_param(0, data.p - 1));
+  }
 
 
   double lower_candidate;
@@ -489,9 +504,15 @@ void change(Node *tree,
   }
 
 
-  // Selecting a splitting variable and a split rule
-  //(explore the logic of selecting a good candidate for the split rule)
-  unsigned int var_split_candidate = arma::randi<arma::uword>(arma::distr_param(0, data.p - 1));
+  // Selecting a splitting variable, respecting specify_variables if active
+  unsigned int var_split_candidate;
+  if (data.sv_bool) {
+    arma::uvec allowed = arma::find(data.sv_matrix.row(j) == 1);
+    if (allowed.is_empty()) return;
+    var_split_candidate = allowed[arma::randi<arma::uword>(arma::distr_param(0, (int)(allowed.n_elem - 1)))];
+  } else {
+    var_split_candidate = arma::randi<arma::uword>(arma::distr_param(0, data.p - 1));
+  }
 
 
   double lower_candidate;

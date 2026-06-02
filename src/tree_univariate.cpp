@@ -16,7 +16,7 @@ void Node::updateResiduals_uni(modelParam_uni& data,
     r_sum = r_sum + curr_res.at(id);
   }
 
-  Gamma_j  = n_leaf+data.sigma_sq/data.sigma_mu;
+  Gamma_j  = n_leaf+data.sigma_sq/data.sigma_mu_sq;
   S_j = r_sum;
 
   return;
@@ -63,9 +63,15 @@ void grow_uni(Node *tree,
     return;
   }
 
-  // Selecting a splitting variable and a split rule
-  //(explore the logic of selecting a good candidate for the split rule)
-  unsigned int var_split_candidate = arma::randi<arma::uword>(arma::distr_param(0, data.p - 1));
+  // Selecting a splitting variable, respecting specify_variables if active
+  unsigned int var_split_candidate;
+  if (data.sv_bool) {
+    arma::uvec allowed = arma::find(data.sv_matrix.row(0) == 1);
+    if (allowed.is_empty()) return;
+    var_split_candidate = allowed[arma::randi<arma::uword>(arma::distr_param(0, (int)(allowed.n_elem - 1)))];
+  } else {
+    var_split_candidate = arma::randi<arma::uword>(arma::distr_param(0, data.p - 1));
+  }
 
 
   double lower_candidate;
@@ -100,10 +106,8 @@ void grow_uni(Node *tree,
 
 
   double r_sum_left = 0.0;
-  double u_sum_left = 0.0;
 
   double r_sum_right = 0.0;
-  double u_sum_right = 0.0;
 
   for(auto& id:g_node->train_index){
 
@@ -112,14 +116,12 @@ void grow_uni(Node *tree,
 
       left_id[left_id_counter] = id;
       r_sum_left = r_sum_left + curr_res[id];
-      u_sum_left = u_sum_left + curr_res[id];
 
       left_id_counter++;
     } else {
 
       right_id[right_id_counter] = id;
       r_sum_right = r_sum_right + curr_res[id];
-      u_sum_right = u_sum_right + curr_res[id];
       right_id_counter++;
 
     }
@@ -141,10 +143,10 @@ void grow_uni(Node *tree,
 
   // Updating other sufficientStatistics;
   Gamma_j_left = left_id_counter+data.sigma_sq/data.sigma_mu_sq;
-  S_j_left = r_sum_left-u_sum_left;
+  S_j_left = r_sum_left;
 
   Gamma_j_right = right_id_counter+data.sigma_sq/data.sigma_mu_sq;
-  S_j_right = r_sum_right-u_sum_right;
+  S_j_right = r_sum_right;
 
 
   // Calculate sufficient statistics for the left and right node outside the UpdateResiduals function.
@@ -358,9 +360,15 @@ void change_uni(Node *tree,
   }
 
 
-  // Selecting a splitting variable and a split rule
-  //(explore the logic of selecting a good candidate for the split rule)
-  unsigned int var_split_candidate = arma::randi<arma::uword>(arma::distr_param(0, data.p - 1));
+  // Selecting a splitting variable, respecting specify_variables if active
+  unsigned int var_split_candidate;
+  if (data.sv_bool) {
+    arma::uvec allowed = arma::find(data.sv_matrix.row(0) == 1);
+    if (allowed.is_empty()) return;
+    var_split_candidate = allowed[arma::randi<arma::uword>(arma::distr_param(0, (int)(allowed.n_elem - 1)))];
+  } else {
+    var_split_candidate = arma::randi<arma::uword>(arma::distr_param(0, data.p - 1));
+  }
 
 
   double lower_candidate;
@@ -383,7 +391,7 @@ void change_uni(Node *tree,
                                                                     upper_candidate); //
 
   // If not valid split vars are found
-  if(var_split_candidate==-1.0){
+  if(var_split_rule_candidate==-1.0){
     return;
   }
 

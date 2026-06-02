@@ -25,6 +25,6 @@ Imports:
 Depends:
     R (>= 3.5.0)
 SystemRequirements: C++14
-Suggests:
+Suggests: 
     testthat (>= 3.0.0)
 Config/testthat/edition: 3
