@@ -6,6 +6,12 @@
 \usage{
 ci_coverage(y_, y_hat_, sd_, prob_ = 0.5)
 }
+\arguments{
+\item{y_}{Numeric vector of observed values.}
+\item{y_hat_}{Numeric vector of predicted means.}
+\item{sd_}{Numeric vector of predicted standard deviations.}
+\item{prob_}{Nominal coverage probability (default 0.5).}
+}
 \description{
 Calculating a Frequentist confidence interval covarage
 }

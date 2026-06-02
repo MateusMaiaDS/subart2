@@ -1,0 +1,61 @@
+\documentclass{article}
+\usepackage[margin=.85in]{geometry}
+\usepackage{amsmath}
+\usepackage{bbm}
+\usepackage{mdframed}
+\usepackage{amssymb}
+\usepackage{multirow}
+\usepackage{subcaption}
+\usepackage{xcolor}
+\usepackage[utf8]{inputenc}
+\usepackage{enumitem}
+\RequirePackage[authoryear]{natbib}
+\RequirePackage[colorlinks,linkcolor=blue,citecolor=blue,urlcolor=blue,filecolor=.,backref=page]{hyperref}
+\usepackage{graphicx,float}
+%this is super important and is the reason for "latexmkrc"
+\usepackage{xr-hyper}
+\makeatletter
+\newcommand*{\addFileDependency}[1]{
+  \typeout{(#1)}
+  \@addtofilelist{#1}
+  \IfFileExists{#1}{}{\typeout{No file #1.}}
+}
+\makeatother
+% This makes a link with the main.tex in order to get the Equation and Section references from that, but only in the form of numbers, meaning that the external references to items in main will be in black (not blue) and will not be hyperlinks.
+\newcommand*{\myexternaldocument}[1]{
+    \externaldocument{#1}
+    \addFileDependency{#1.tex}
+    \addFileDependency{#1.aux}
+}
+\myexternaldocument{main}
+
+\title{\vspace{-2em}Seemingly unrelated Bayesian additive regression trees for cost-effectiveness analyses in healthcare\\\medskip\Large{Rebuttal Letter}}
+\author{Mateus Maia, Jonas L. Esser, Keefe Murphy, and co-authors}
+\date{August 2025\vspace{-1em}}
+
+\begin{document}
+\maketitle
+
+We are very pleased to hear that the editor and reviewers are satisfied with the paper, and that the only remaining required changes amount to shortening the main body of the paper to 25 pages and moving the appendices to a separate file of Supplementary Material. In our revised submission, the main text, acknowledgements, funding sources, and details of the Supplementary Material now amount to exactly 25 pages. We were able to achieve the desired length largely through trimming some needlessly verbose text while still conveying the same essential points. Some tables and figures which we deemed unnecessary have also been removed, without compromising the structure of the paper by moving any others to the Supplementary Material. A non-exhaustive overview of the changes we made is given below.
+
+We thank the editor and reviewers for their helpful comments on our work and hope that the paper now meets the publication standards of the journal.
+
+\subsection*{Overview of changes}
+\textbf{Remark:} unless otherwise stated, the figure, table, and section numbers in the following list refer to the \textit{previous} version of the paper. The numbering has since changed.
+\begin{itemize}[wide,itemsep=2pt]
+\item The appendices have been moved to a separate document. We attach this PDF file of Supplementary Material with our resubmission.
+\item We made many small simplifications and clarifications in the text and equations. As examples, numerous duplicated equations pertaining to the probit version of suBART have been replaced by explaining, in the text, how the responses $y_i^{(j)}$ in equations for the continuous suBART are simply replaced by the latent $z_i^{(j)}$. Furthermore, rendering certain equations as inline math and collapsing others to fewer lines also saved some space.
+\item In the previous version, Table 1 showed the baseline variables in the TTCM data along with some summary statistics by group (according to the two treatment options). As this table was a reproduction of one already provided by \citet{wiertsema2019cost}, to whom we refer as the source of the data, this level of detail seemed excessive. Hence, we removed the table and instead summarised all relevant information about the covariates contained in the TTCM dataset in a short paragraph in Section \ref{sec:TTCM_intro}.
+\item The former Table 2 has also been removed. It detailed the parameter settings for the covariance matrix $\boldsymbol{\Sigma}$ in our Friedman simulation experiments, which are now simply stated in the text.
+%\item We removed an (unnumbered) equation in Section \ref{sec:suBART_continuous} which explained how the correlations $\rho_{jk}$ relate to the covariance matrix $\boldsymbol{\Sigma}$. This was unnecessary, since this relationship is presumably obvious to readers of the paper.
+\item We removed Algorithm 1, which detailed the MCMC sampler, since it essentially just restated information that was already given in the text. Equations are still provided for all required posterior conditional distributions.
+\item We removed Figure 1. Although it provided a nice illustration of a regression tree, we deemed it unnecessary. 
+\item We merged Table 5 and Table 6 into a single table. What is now Table \ref{tab:results_Delta_cq} instead reports performance metrics for both treatment effects $\Delta_c$ and $\Delta_q$ simultaneously.
+\item Integrating numerous footnotes into the main text also saved some space.
+\end{itemize}
+
+\small
+\bibliographystyle{ba}
+\bibliography{sample}
+
+\end{document}

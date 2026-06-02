@@ -141,25 +141,25 @@ Rcpp::List cppsubart(arma::mat x_train,
 
 
       // Initializing the messages:
-      printf("\nRunning subart with numeric y\n\n");
-      printf("\nParameters: \n");
-      printf("\tnumber of trees: %u \n", data.n_tree);
-      printf("\talpha and beta for tree prior: %f %f\n", data.alpha, data.beta);
-      printf("\tnumber of responses: %u \n", data.d);
-      printf("\tnumber of training observations: %u\n", data.n);
+      Rprintf("\nRunning subart with numeric y\n\n");
+      Rprintf("\nParameters: \n");
+      Rprintf("\tnumber of trees: %u \n", data.n_tree);
+      Rprintf("\talpha and beta for tree prior: %f %f\n", data.alpha, data.beta);
+      Rprintf("\tnumber of responses: %u \n", data.d);
+      Rprintf("\tnumber of training observations: %u\n", data.n);
       if(fit_test){
-        printf("\tnumber of test observations : %u\n", data.n_test);
+        Rprintf("\tnumber of test observations : %u\n", data.n_test);
       }
-      printf("\tnumber of explanatory variables: %u \n", data.p);
-      printf("\nMCMC \n");
-      printf("\tnumber of mcmc iter: %u \n", data.n_mcmc);
-      printf("\tnumber of n_burn iter: %u \n", data.n_burn);
-      printf("\nMCMC run: \n");
+      Rprintf("\tnumber of explanatory variables: %u \n", data.p);
+      Rprintf("\nMCMC \n");
+      Rprintf("\tnumber of mcmc iter: %u \n", data.n_mcmc);
+      Rprintf("\tnumber of n_burn iter: %u \n", data.n_burn);
+      Rprintf("\nMCMC run: \n");
       unsigned int printevery = 100;
 
       for(unsigned int i = 0; i < data.n_mcmc; i ++){
 
-        if(i%printevery==0) printf("done %u (out of %u)\n",i,data.n_mcmc);
+        if(i%printevery==0) Rprintf("done %u (out of %u)\n",i,data.n_mcmc);
 
         // Do I need to initialise prediction train_test and so on as zero before?
 
@@ -247,7 +247,7 @@ Rcpp::List cppsubart(arma::mat x_train,
                 if(verb < 0.3) {
                   data.move_proposal.at(0)++;
                   grow(all_trees[curr_tree_counter],data,partial_residuals,partial_u,j);
-                } else if((verb >= 0.3) & (verb < 6.0)){
+                } else if((verb >= 0.3) & (verb < 0.6)){
                   data.move_proposal.at(1)++;
                   prune(all_trees[curr_tree_counter],data,partial_residuals,partial_u,j);
                 } else {
@@ -307,7 +307,7 @@ Rcpp::List cppsubart(arma::mat x_train,
       } // End of the MCMC iteration
 
 
-      printf("\nDONE SUBART\n\n");
+      Rprintf("\nDONE SUBART\n\n");
 
       return Rcpp::List::create(y_train_hat_post, //[1]
                                 y_test_hat_post, //[2]

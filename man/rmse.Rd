@@ -6,6 +6,10 @@
 \usage{
 rmse(x, y)
 }
+\arguments{
+\item{x}{Numeric vector of predicted values.}
+\item{y}{Numeric vector of observed values.}
+}
 \description{
 RMSE: Calculating the rmse
 }

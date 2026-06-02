@@ -6,6 +6,11 @@
 \usage{
 crps(y, means, sds)
 }
+\arguments{
+\item{y}{Numeric vector of observed values.}
+\item{means}{Numeric vector of predictive means.}
+\item{sds}{Numeric vector of predictive standard deviations.}
+}
 \description{
 Calculating CRPS from (https://arxiv.org/pdf/1709.04743.pdf)
 }

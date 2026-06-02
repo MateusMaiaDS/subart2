@@ -346,7 +346,7 @@ sim_class_mvn_friedman2 <- function(n, p, mvn_dim,Sigma = NULL){
       z[i,] <- z_true[i,] + mvnfast::rmvn(n = 1,mu = rep(0,mvn_dim),sigma = Sigma)
       y[i,] <- (z[i,]>0)
       y_true[i,] <- (z_true[i,]>0)
-      p_[i,] <- stats::pnorm(z[i,])
+      p_true[i,] <- stats::pnorm(z_true[i,])
     }
 
   } else if(mvn_dim==2){

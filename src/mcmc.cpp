@@ -240,6 +240,9 @@ void update_y_mat_missing(modelParam & data,
       Sigma_mj_mj_inv = arma::inv(Sigma_mj_mj);
       arma::mat scale_mean_aux = Sigma_j_mj*Sigma_mj_mj_inv;
 
+      // Transpose after filling so unsafe_col(na_id) gives the right slice
+      y_mj_t = y_mj.t();
+      y_hat_mj_t = y_hat_mj.t();
 
       double variance_aux = data.Sigma(ii,ii) - arma::as_scalar(scale_mean_aux*Sigma_mj_j);
       double mean_y_ii;

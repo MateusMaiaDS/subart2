@@ -6,6 +6,14 @@
 \usage{
 pi_coverage(y, y_hat_post, sd_post, prob = 0.5, n_mcmc_replications = 1000)
 }
+\arguments{
+\item{y}{Numeric vector of observed responses.}
+\item{y_hat_post}{Matrix of posterior predictive mean samples (n x n_mcmc).}
+\item{sd_post}{Numeric vector of posterior standard deviation samples.}
+\item{prob}{Nominal coverage probability (default 0.5).}
+\item{n_mcmc_replications}{Number of Monte Carlo replications used to
+  approximate the coverage (default 1000).}
+}
 \description{
 Coverage for the prediction intervals
 }

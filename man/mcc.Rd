@@ -6,6 +6,10 @@
 \usage{
 mcc(y_true, y_hat)
 }
+\arguments{
+\item{y_true}{Integer vector of true binary labels (0/1).}
+\item{y_hat}{Integer vector of predicted binary labels (0/1).}
+}
 \description{
 Getting the mcc
 }
