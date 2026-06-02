@@ -762,10 +762,10 @@ subart <- function(x_train,
 
     # Transforming to classification context
 
+    ESS_warn <- FALSE
+
     # Getting the list of outcomes
     if(class_model){
-
-      ESS_warn <- FALSE
 
       # ESS on correlation matrix (Sigma already normalised to R in cppsubart_CLASS)
       if(diagnostic && !is.null(Sigma_post)){

@@ -45,7 +45,7 @@ cat(sprintf("n_train=%d  n_test=%d  p=%d\n", n_tr, n_te, p))
 
 # ---- Fit models -------------------------------------------------------------
 
-MCMC_SETTINGS <- list(n_tree = 20, n_mcmc = 1000, n_burn = 200,
+MCMC_SETTINGS <- list(n_tree = 200, n_mcmc = 1000, n_burn = 200,
                       varimportance = TRUE, diagnostic = TRUE)
 
 time_og <- system.time({
