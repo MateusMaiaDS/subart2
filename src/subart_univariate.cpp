@@ -160,10 +160,10 @@ Rcpp::List cppsubart_univariate(arma::mat x_train,
         }
 
         // Selecting each verb -- Here I considering the probability of Grow:0.3, Prune: 0.3, and Change = 0.4 -- May need to reavulate those
-        if(verb < 0.5) {
+        if(verb < 0.3) {
           data.move_proposal.at(0)++;
           grow_uni(all_trees[t],data,partial_residuals);
-        } else if((verb >= 0.5) & (verb < 1.0)){
+        } else if((verb >= 0.3) & (verb < 0.6)){
           data.move_proposal.at(1)++;
           prune_uni(all_trees[t],data,partial_residuals);
         } else {

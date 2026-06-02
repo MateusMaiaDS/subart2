@@ -28,9 +28,9 @@ n_tr  <- 200
 n_te  <- 200
 
 x_all   <- data.frame(matrix(stats::runif(n * p), ncol = p,
-                              dimnames = list(NULL, paste0("X", 1:p))))
+                             dimnames = list(NULL, paste0("X", 1:p))))
 y_true_all <- with(x_all,
-  10 * sin(pi * X1 * X2) + 20 * (X3 - 0.5)^2 + 10 * X4 + 5 * X5)
+                   10 * sin(pi * X1 * X2) + 20 * (X3 - 0.5)^2 + 10 * X4 + 5 * X5)
 y_all <- matrix(y_true_all + stats::rnorm(n, 0, 1), ncol = 1)
 
 x_train      <- x_all[1:n_tr, ]
@@ -49,14 +49,13 @@ MCMC_SETTINGS <- list(n_tree = 50, n_mcmc = 1000, n_burn = 200,
                       varimportance = TRUE, diagnostic = FALSE)
 
 time_og <- system.time({
-  fit_og <- do.call(dbarts,
-                    c(list(x_train = x_train, y_train = y_train,
-                           x_test  = x_test),
-                      MCMC_SETTINGS))
+  fit_og <- do.call(dbarts::bart,
+                    c(list(x.train = x_train, y.train = y_train,
+                           x.test  = x_test,ntree=50,nskip = 200, ndpost = 1000)))
 })
 
 time_new <- system.time({
-  fit_new <- do.call(subart::subart,
+  fit_new <- do.call(subart2::subart,
                      c(list(x_train = x_train, y_train = y_train,
                             x_test  = x_test),
                        MCMC_SETTINGS))
@@ -65,7 +64,8 @@ time_new <- system.time({
 # ---- Console output ---------------------------------------------------------
 
 print_timing_table(time_og, time_new, scenario = "Univariate Regression")
-print_rmse_table(fit_og, fit_new, y_true_train, y_true_test)
+plot(fit_og$yhat.train.mean,fit_new$y_hat_mean,xlab = "dbarts",ylab = "subart")
+
 
 # ---- Plots ------------------------------------------------------------------
 
