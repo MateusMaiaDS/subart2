@@ -63,9 +63,15 @@ void grow_uni(Node *tree,
     return;
   }
 
-  // Selecting a splitting variable and a split rule
-  //(explore the logic of selecting a good candidate for the split rule)
-  unsigned int var_split_candidate = arma::randi<arma::uword>(arma::distr_param(0, data.p - 1));
+  // Selecting a splitting variable, respecting specify_variables if active
+  unsigned int var_split_candidate;
+  if (data.sv_bool) {
+    arma::uvec allowed = arma::find(data.sv_matrix.row(0) == 1);
+    if (allowed.is_empty()) return;
+    var_split_candidate = allowed[arma::randi<arma::uword>(arma::distr_param(0, (int)(allowed.n_elem - 1)))];
+  } else {
+    var_split_candidate = arma::randi<arma::uword>(arma::distr_param(0, data.p - 1));
+  }
 
 
   double lower_candidate;
@@ -358,9 +364,15 @@ void change_uni(Node *tree,
   }
 
 
-  // Selecting a splitting variable and a split rule
-  //(explore the logic of selecting a good candidate for the split rule)
-  unsigned int var_split_candidate = arma::randi<arma::uword>(arma::distr_param(0, data.p - 1));
+  // Selecting a splitting variable, respecting specify_variables if active
+  unsigned int var_split_candidate;
+  if (data.sv_bool) {
+    arma::uvec allowed = arma::find(data.sv_matrix.row(0) == 1);
+    if (allowed.is_empty()) return;
+    var_split_candidate = allowed[arma::randi<arma::uword>(arma::distr_param(0, (int)(allowed.n_elem - 1)))];
+  } else {
+    var_split_candidate = arma::randi<arma::uword>(arma::distr_param(0, data.p - 1));
+  }
 
 
   double lower_candidate;
